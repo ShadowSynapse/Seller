@@ -1,6 +1,6 @@
 // ── ShadowStore Keygen Core v3 ────────────────────────────────────────
 //
-// Formato : Shadow-XXXXXX
+// Formato : SHADOW-XXXXXX
 // Charset : A-Z + 0-9  (36 chars)
 //
 // Por qué NO símbolos:
@@ -43,7 +43,7 @@ function fisherYates(arr) {
 }
 
 /**
- * Genera una key con formato Shadow-XXXXXX.
+ * Genera una key con formato SHADOW-XXXXXX.
  * Garantiza ≥2 letras y ≥2 dígitos antes de mezclar.
  */
 function generateKey() {
@@ -53,16 +53,16 @@ function generateKey() {
   ];
   const rest  = [secureRand(FULL), secureRand(FULL)];
   const chars = fisherYates([...mandatory, ...rest]);
-  return "Shadow-" + chars.join("");
+  return "SHADOW-" + chars.join("");
 }
 
 /**
  * Valida formato de key — debe matchear ka_check_format() en el mod nativo.
- * Shadow-XXXXXX: prefijo fijo + 6 chars A-Z0-9, ≥2 letras y ≥2 dígitos.
+ * SHADOW-XXXXXX: prefijo fijo + 6 chars A-Z0-9, ≥2 letras y ≥2 dígitos.
  */
 function validateFormat(key) {
   if (!key || typeof key !== "string") return false;
-  if (!key.startsWith("Shadow-"))       return false;
+  if (!key.startsWith("SHADOW-"))       return false;
   const suffix = key.slice(7);
   if (suffix.length !== 6)              return false;
   let letters = 0, digits = 0;

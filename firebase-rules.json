@@ -1,11 +1,11 @@
 {
   "rules": {
     "keys": {
-      ".read":  "auth != null",
+      ".read":  true,
       ".write": "auth != null",
       "$keyId": {
         ".validate": "newData.hasChildren(['key','status','duration','createdAt','expiresAt'])",
-        "key":       { ".validate": "newData.isString() && newData.val().matches(/^Shadow-[A-Z0-9]{6}$/)" },
+        "key":       { ".validate": "newData.isString() && newData.val().matches(/^SHADOW-[A-Z0-9]{6}$/)" },
         "status":    { ".validate": "newData.isString() && (newData.val() === 'active' || newData.val() === 'inactive')" },
         "duration":  { ".validate": "newData.isString() && (newData.val() === '1d' || newData.val() === '7d' || newData.val() === '15d' || newData.val() === '30d')" },
         "hwid":      { ".validate": "newData.isString() || newData.val() === null" },

@@ -518,7 +518,7 @@ function generateKey() {
   ];
   const rest = [secureRand(FULL), secureRand(FULL)];
   const chars = fisherYates([...mandatory, ...rest]);
-  return "Shadow-" + chars.join("");
+  return "SHADOW-" + chars.join("");
 }
 
 /* ─── HELPERS ─────────────────────────────────────── */
