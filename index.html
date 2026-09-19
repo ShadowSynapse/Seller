@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ShadowStore — Key Panel</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<style>
+/* ─── RESET & TOKENS ──────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:         #080a0e;
+  --surface:    #0d1018;
+  --surface-2:  #111520;
+  --border:     #181e2e;
+  --border-hi:  #232940;
+  --fire:       #f26b0a;
+  --fire-dim:   rgba(242,107,10,.12);
+  --fire-glow:  rgba(242,107,10,.25);
+  --amber:      #ffa61a;
+  --green:      #2fe87a;
+  --green-dim:  rgba(47,232,122,.1);
+  --red:        #f0576e;
+  --red-dim:    rgba(240,87,110,.1);
+  --yellow:     #f0c040;
+  --yellow-dim: rgba(240,192,64,.1);
+  --purple:     #a06ef0;
+  --purple-dim: rgba(160,110,240,.1);
+  --text:       #dde2f0;
+  --text-2:     #6e7a98;
+  --text-3:     #32394f;
+  --mono:       "Fira Code","Cascadia Code","Consolas",monospace;
+  --sans:       "Inter","Segoe UI",system-ui,sans-serif;
+  --r:          8px;
+  --r-sm:       5px;
+  --r-lg:       12px;
+  --shadow:     0 8px 32px rgba(0,0,0,.65);
+}
+html{font-size:14px;scroll-behavior:smooth}
+body{
+  font-family:var(--sans);
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 50% -10%,rgba(242,107,10,.06) 0%,transparent 70%);
+}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-3)}
+
+/* ─── HEADER ──────────────────────────────────────── */
+.hdr{
+  position:sticky;top:0;z-index:200;
+  background:rgba(8,10,14,.92);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.hdr-inner{
+  max-width:1300px;margin:0 auto;
+  padding:12px 24px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-mark{
+  width:28px;height:28px;border-radius:7px;
+  background:linear-gradient(135deg,var(--fire),#c4550a);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;box-shadow:0 0 14px var(--fire-glow);
+}
+.logo-name{font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:.04em}
+.logo-name span{color:var(--fire)}
+.logo-ver{
+  font-size:10px;color:var(--text-2);
+  background:var(--surface-2);border:1px solid var(--border-hi);
+  padding:2px 8px;border-radius:20px;letter-spacing:.06em;
+}
+.hdr-right{display:flex;align-items:center;gap:10px}
+.conn-pill{
+  display:flex;align-items:center;gap:6px;
+  font-family:var(--mono);font-size:11px;color:var(--text-2);
+  background:var(--surface);border:1px solid var(--border-hi);
+  padding:4px 10px;border-radius:20px;
+}
+.conn-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.conn-dot.connecting{background:var(--yellow);animation:blink 1.4s infinite}
+.conn-dot.connected{background:var(--green);box-shadow:0 0 6px var(--green)}
+.conn-dot.error{background:var(--red)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+#badge-count{
+  font-family:var(--mono);font-size:11px;color:var(--text-2);
+  background:var(--surface);border:1px solid var(--border-hi);
+  padding:4px 10px;border-radius:20px;
+}
+
+/* ─── LAYOUT ──────────────────────────────────────── */
+.main{max-width:1300px;margin:0 auto;padding:24px;display:grid;gap:18px}
+
+/* ─── STATS ───────────────────────────────────────── */
+.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.stat{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:16px 18px;
+  display:flex;flex-direction:column;gap:6px;
+  position:relative;overflow:hidden;
+  transition:border-color .2s;
+}
+.stat::before{
+  content:"";position:absolute;inset:0;
+  opacity:0;transition:opacity .2s;pointer-events:none;
+}
+.stat:hover{border-color:var(--border-hi)}
+.stat-num{
+  font-family:var(--mono);font-size:28px;font-weight:700;
+  line-height:1;color:var(--text-2);
+}
+.stat-lbl{font-size:10px;letter-spacing:.08em;color:var(--text-3);text-transform:uppercase}
+.stat.s-active   .stat-num{color:var(--green)}
+.stat.s-inactive .stat-num{color:var(--yellow)}
+.stat.s-expired  .stat-num{color:var(--red)}
+.stat.s-hwid     .stat-num{color:var(--purple)}
+
+/* ─── PANEL ───────────────────────────────────────── */
+.panel{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-lg);overflow:hidden;
+}
+.panel-head{
+  padding:16px 20px 0;
+  font-size:10px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--text-3);
+}
+
+/* ─── GENERATOR ───────────────────────────────────── */
+.gen-body{padding:16px 20px 20px;display:flex;flex-direction:column;gap:14px}
+.form-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.form-lbl{font-size:12px;color:var(--text-2);min-width:72px;flex-shrink:0}
+.dur-group{display:flex;gap:6px;flex-wrap:wrap}
+.btn-dur{
+  font-family:var(--mono);font-size:12px;
+  padding:6px 14px;border-radius:var(--r-sm);
+  border:1px solid var(--border-hi);
+  background:transparent;color:var(--text-2);
+  cursor:pointer;transition:all .15s;
+}
+.btn-dur:hover{border-color:var(--fire);color:var(--fire)}
+.btn-dur.active{
+  border-color:var(--fire);
+  background:var(--fire-dim);
+  color:var(--fire);font-weight:600;
+}
+.input{
+  font-family:var(--sans);font-size:13px;
+  padding:8px 12px;border-radius:var(--r-sm);
+  background:var(--bg);border:1px solid var(--border-hi);
+  color:var(--text);outline:none;
+  transition:border-color .15s;
+}
+.input:focus{border-color:var(--fire);box-shadow:0 0 0 2px var(--fire-dim)}
+.input-sm{width:80px}
+select.input{cursor:pointer}
+.hint{font-size:11px;color:var(--text-3)}
+.btn{
+  display:inline-flex;align-items:center;gap:7px;
+  font-size:13px;font-weight:600;
+  padding:9px 20px;border-radius:var(--r-sm);
+  border:none;cursor:pointer;transition:all .18s;
+  white-space:nowrap;
+}
+.btn-fire{
+  background:linear-gradient(135deg,var(--fire),#d45a00);
+  color:#fff;box-shadow:0 2px 12px var(--fire-glow);
+}
+.btn-fire:hover{transform:translateY(-1px);box-shadow:0 4px 18px var(--fire-glow)}
+.btn-fire:active{transform:none}
+.btn-ghost{
+  background:transparent;border:1px solid var(--border-hi);
+  color:var(--text-2);
+}
+.btn-ghost:hover{border-color:var(--fire);color:var(--fire)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-danger:hover{filter:brightness(1.1)}
+.btn-sm{
+  font-size:11px;padding:5px 11px;border-radius:var(--r-sm);
+  border:1px solid var(--border-hi);background:transparent;
+  color:var(--text-2);cursor:pointer;transition:all .15s;
+}
+.btn-sm:hover{border-color:var(--fire);color:var(--fire)}
+.btn-sm-danger{border-color:rgba(240,87,110,.4);color:var(--red)}
+.btn-sm-danger:hover{background:var(--red-dim)}
+
+/* ─── KEY PREVIEW ─────────────────────────────────── */
+.preview-box{
+  border:1px solid var(--border-hi);border-radius:var(--r);
+  overflow:hidden;
+}
+.preview-top{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 14px;background:var(--surface-2);
+  border-bottom:1px solid var(--border);
+}
+.preview-top-lbl{font-size:11px;color:var(--text-2)}
+.preview-list{max-height:220px;overflow-y:auto}
+.preview-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 14px;border-bottom:1px solid var(--border);
+  transition:background .12s;
+}
+.preview-item:last-child{border-bottom:none}
+.preview-item:hover{background:var(--surface-2)}
+.pkey{font-family:var(--mono);font-size:13px;color:var(--fire);letter-spacing:.05em}
+.pcopy{
+  font-size:10px;padding:3px 8px;border-radius:3px;
+  border:1px solid var(--border-hi);background:transparent;
+  color:var(--text-3);cursor:pointer;transition:all .12s;
+}
+.pcopy:hover{color:var(--fire);border-color:var(--fire)}
+
+/* ─── FILTER BAR ──────────────────────────────────── */
+.filter-bar{padding:14px 20px;display:flex;gap:8px;flex-wrap:wrap}
+#search{flex:1;min-width:180px}
+
+/* ─── TABLE ───────────────────────────────────────── */
+.tbl-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px 12px;border-bottom:1px solid var(--border);
+}
+.tbl-head-lbl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
+.tbl-actions{display:flex;gap:8px}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{
+  text-align:left;padding:10px 16px;
+  font-size:10px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.08em;
+  color:var(--text-3);border-bottom:1px solid var(--border);
+  white-space:nowrap;
+}
+td{padding:10px 16px;border-bottom:1px solid var(--border);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--surface-2)}
+.empty td{text-align:center;color:var(--text-3);padding:40px;font-size:13px}
+/* key cell */
+.key-cell{display:flex;align-items:center;gap:8px}
+.key-str{font-family:var(--mono);font-size:12px;letter-spacing:.04em}
+.mini-copy{
+  font-size:9px;padding:2px 6px;border-radius:3px;
+  border:1px solid var(--border-hi);background:transparent;
+  color:var(--text-3);cursor:pointer;
+  opacity:0;transition:opacity .12s,color .12s;
+}
+tr:hover .mini-copy{opacity:1}
+.mini-copy:hover{color:var(--fire);border-color:var(--fire)}
+/* pills */
+.pill{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:10px;font-weight:700;letter-spacing:.04em;
+  padding:4px 10px;border-radius:20px;white-space:nowrap;
+}
+.pill-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.pill-active  {background:var(--green-dim);color:var(--green)}
+.pill-inactive{background:var(--yellow-dim);color:var(--yellow)}
+.pill-expired {background:var(--red-dim);color:var(--red)}
+/* tags */
+.dur-tag{
+  font-family:var(--mono);font-size:10px;
+  padding:3px 9px;border-radius:3px;
+  background:var(--surface-2);border:1px solid var(--border-hi);
+  color:var(--text-2);
+}
+.hwid-txt{
+  font-family:var(--mono);font-size:10px;color:var(--text-2);
+  max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.hwid-none{font-size:11px;color:var(--text-3);font-style:italic}
+.date-txt{font-size:11px;color:var(--text-2);white-space:nowrap}
+.date-exp{color:var(--red)}
+/* action buttons */
+.act-group{display:flex;gap:5px;flex-wrap:wrap}
+.act{
+  font-size:10px;padding:4px 10px;border-radius:var(--r-sm);
+  border:1px solid var(--border-hi);background:transparent;
+  cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.act-toggle-off{color:var(--yellow);border-color:rgba(240,192,64,.35)}
+.act-toggle-off:hover{background:var(--yellow-dim)}
+.act-toggle-on{color:var(--green);border-color:rgba(47,232,122,.35)}
+.act-toggle-on:hover{background:var(--green-dim)}
+.act-hwid{color:var(--purple);border-color:rgba(160,110,240,.35)}
+.act-hwid:hover{background:var(--purple-dim)}
+.act-del{color:var(--red);border-color:rgba(240,87,110,.35)}
+.act-del:hover{background:var(--red-dim)}
+
+/* ─── TOAST ───────────────────────────────────────── */
+#toast{
+  position:fixed;bottom:22px;right:22px;z-index:9999;
+  background:var(--surface);border:1px solid var(--border-hi);
+  border-left:3px solid var(--fire);
+  padding:11px 18px;border-radius:var(--r);
+  font-size:13px;color:var(--text);
+  box-shadow:var(--shadow);
+  transition:opacity .22s,transform .22s;
+  max-width:300px;pointer-events:none;
+}
+#toast.hide{opacity:0;transform:translateY(8px)}
+#toast.t-ok {border-left-color:var(--green)}
+#toast.t-err{border-left-color:var(--red)}
+
+/* ─── MODAL ───────────────────────────────────────── */
+.overlay{
+  position:fixed;inset:0;z-index:9998;
+  background:rgba(0,0,0,.75);backdrop-filter:blur(5px);
+  display:flex;align-items:center;justify-content:center;
+}
+.overlay.off{display:none}
+.modal{
+  background:var(--surface);border:1px solid var(--border-hi);
+  border-radius:var(--r-lg);padding:26px 28px;
+  max-width:320px;width:90%;box-shadow:var(--shadow);
+}
+.modal-msg{font-size:14px;line-height:1.65;margin-bottom:20px;color:var(--text)}
+.modal-foot{display:flex;gap:10px;justify-content:flex-end}
+
+/* ─── RESPONSIVE ──────────────────────────────────── */
+@media(max-width:1000px){.stats-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px){
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .main{padding:12px}
+  .hdr-inner{padding:10px 14px}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-inner">
+    <div class="logo">
+      <div class="logo-mark">◆</div>
+      <span class="logo-name">Shadow<span>Store</span></span>
+      <span class="logo-ver">Panel v3</span>
+    </div>
+    <div class="hdr-right">
+      <div class="conn-pill">
+        <span id="conn-dot" class="conn-dot connecting"></span>
+        <span id="conn-lbl">Conectando…</span>
+      </div>
+      <span id="badge-count">— keys</span>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat"><span id="st-total" class="stat-num">—</span><span class="stat-lbl">Total</span></div>
+    <div class="stat s-active"><span id="st-active" class="stat-num">—</span><span class="stat-lbl">Activas</span></div>
+    <div class="stat s-inactive"><span id="st-inactive" class="stat-num">—</span><span class="stat-lbl">Inactivas</span></div>
+    <div class="stat s-expired"><span id="st-expired" class="stat-num">—</span><span class="stat-lbl">Expiradas</span></div>
+    <div class="stat s-hwid"><span id="st-hwid" class="stat-num">—</span><span class="stat-lbl">Con HWID</span></div>
+  </div>
+
+  <!-- GENERATOR -->
+  <div class="panel">
+    <div class="panel-head">Generar Keys</div>
+    <div class="gen-body">
+      <div class="form-row">
+        <span class="form-lbl">Duración</span>
+        <div class="dur-group" id="dur-group">
+          <button class="btn-dur active" data-d="1d">1 Día</button>
+          <button class="btn-dur" data-d="7d">7 Días</button>
+          <button class="btn-dur" data-d="15d">15 Días</button>
+          <button class="btn-dur" data-d="30d">30 Días</button>
+        </div>
+      </div>
+      <div class="form-row">
+        <span class="form-lbl">Cantidad</span>
+        <input id="gen-qty" class="input input-sm" type="number" min="1" max="50" value="1"/>
+        <span class="hint">máx 50</span>
+        <button id="btn-gen" class="btn btn-fire">⚡ Generar</button>
+      </div>
+      <div id="preview-box" class="preview-box" style="display:none">
+        <div class="preview-top">
+          <span id="preview-lbl" class="preview-top-lbl"></span>
+          <button id="btn-copy-all" class="btn-sm">Copiar todo</button>
+        </div>
+        <div id="preview-list" class="preview-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTER -->
+  <div class="panel">
+    <div class="filter-bar">
+      <input id="search" class="input" placeholder="Buscar key o HWID…"/>
+      <select id="f-status" class="input">
+        <option value="all">Todos</option>
+        <option value="active">Activas</option>
+        <option value="inactive">Inactivas</option>
+        <option value="expired">Expiradas</option>
+      </select>
+      <select id="f-dur" class="input">
+        <option value="all">Todas las duraciones</option>
+        <option value="1d">1 Día</option>
+        <option value="7d">7 Días</option>
+        <option value="15d">15 Días</option>
+        <option value="30d">30 Días</option>
+      </select>
+      <select id="f-hwid" class="input">
+        <option value="all">Todos</option>
+        <option value="with">Con HWID</option>
+        <option value="without">Sin HWID</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="panel">
+    <div class="tbl-head">
+      <span class="tbl-head-lbl">Keys Registradas</span>
+      <div class="tbl-actions">
+        <button id="btn-export" class="btn-sm">⬇ CSV</button>
+        <button id="btn-del-exp" class="btn-sm btn-sm-danger">Borrar Expiradas</button>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Key</th><th>Estado</th><th>Duración</th>
+            <th>HWID</th><th>Creada</th><th>Expira</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-body">
+          <tr class="empty"><td colspan="7">Conectando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<!-- TOAST -->
+<div id="toast" class="hide"></div>
+
+<!-- CONFIRM MODAL -->
+<div id="overlay" class="overlay off">
+  <div class="modal">
+    <p id="modal-msg" class="modal-msg"></p>
+    <div class="modal-foot">
+      <button id="modal-cancel" class="btn btn-ghost">Cancelar</button>
+      <button id="modal-ok"     class="btn btn-danger">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ─── CONFIG ──────────────────────────────────────── */
+const FIREBASE_CFG = {
+  apiKey:            "AIzaSyAVH-wVqtEZRmXJhJGRTur0r7k12iLsahQ",
+  authDomain:        "chams-module.firebaseapp.com",
+  databaseURL:       "https://chams-module-default-rtdb.firebaseio.com",
+  projectId:         "chams-module",
+  storageBucket:     "chams-module.firebasestorage.app",
+  messagingSenderId: "790288424755",
+  appId:             "1:790288424755:web:89f26cb07208ee28cfa846"
+};
+
+const DURATIONS = {
+  "1d" : { label:"1 Día",   days:1  },
+  "7d" : { label:"7 Días",  days:7  },
+  "15d": { label:"15 Días", days:15 },
+  "30d": { label:"30 Días", days:30 }
+};
+
+/* ─── FIREBASE INIT ───────────────────────────────── */
+firebase.initializeApp(FIREBASE_CFG);
+const db      = firebase.app().database(FIREBASE_CFG.databaseURL);
+const keysRef = db.ref("keys");
+
+/* ─── KEYGEN ──────────────────────────────────────── */
+// A-Z + 0-9 ONLY — Firebase RTDB safe, URL safe
+// Símbolos (#,$,%,etc.) rompían nodos de Firebase y URLs del mod nativo.
+const ALPHA   = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const NUMERIC = "0123456789";
+const FULL    = ALPHA + NUMERIC; // 36 chars
+
+function secureRand(charset) {
+  const cap = Math.floor(0x100000000 / charset.length) * charset.length;
+  const buf = new Uint32Array(1);
+  let v;
+  do { crypto.getRandomValues(buf); v = buf[0]; } while (v >= cap);
+  return charset[v % charset.length];
+}
+
+function fisherYates(arr) {
+  const buf = new Uint32Array(1);
+  for (let i = arr.length - 1; i > 0; i--) {
+    crypto.getRandomValues(buf);
+    const j = buf[0] % (i + 1);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function generateKey() {
+  // Garantizar ≥2 letras y ≥2 dígitos
+  const mandatory = [
+    secureRand(ALPHA), secureRand(ALPHA),
+    secureRand(NUMERIC), secureRand(NUMERIC)
+  ];
+  const rest = [secureRand(FULL), secureRand(FULL)];
+  const chars = fisherYates([...mandatory, ...rest]);
+  return "Shadow-" + chars.join("");
+}
+
+/* ─── HELPERS ─────────────────────────────────────── */
+function expiryFor(durKey) {
+  return Date.now() + DURATIONS[durKey].days * 86400000;
+}
+
+function fmt(ts) {
+  if (!ts) return "—";
+  return new Date(ts).toLocaleString("es-ES", {
+    year:"numeric", month:"2-digit", day:"2-digit",
+    hour:"2-digit", minute:"2-digit"
+  });
+}
+
+function isExpired(e) { return Date.now() > e.expiresAt; }
+
+function statusOf(entry) {
+  if (isExpired(entry)) return "expired";
+  return entry.status === "active" ? "active" : "inactive";
+}
+
+/* ─── STATE ───────────────────────────────────────── */
+let allKeys    = {};
+let activeDur  = "1d";
+let confirmCb  = null;
+let toastTimer = null;
+
+/* ─── DOM REFS ────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+const tbody      = $("tbl-body");
+const badge      = $("badge-count");
+const connDot    = $("conn-dot");
+const connLbl    = $("conn-lbl");
+const previewBox = $("preview-box");
+const previewLst = $("preview-list");
+const search     = $("search");
+const fStatus    = $("f-status");
+const fDur       = $("f-dur");
+const fHwid      = $("f-hwid");
+const toast      = $("toast");
+const overlay    = $("overlay");
+const modalMsg   = $("modal-msg");
+
+/* ─── CONNECTION STATUS ───────────────────────────── */
+db.ref(".info/connected").on("value", snap => {
+  const ok = snap.val();
+  connDot.className = "conn-dot " + (ok ? "connected" : "connecting");
+  connLbl.textContent = ok ? "Conectado" : "Reconectando…";
+});
+
+/* ─── LIVE DATA ───────────────────────────────────── */
+keysRef.on("value", snap => {
+  allKeys = snap.val() || {};
+  renderTable();
+  renderStats();
+  badge.textContent = Object.keys(allKeys).length + " keys";
+}, err => {
+  toast_(err.message, "err");
+  tbody.innerHTML = `<tr class="empty"><td colspan="7">${err.message}</td></tr>`;
+});
+
+/* ─── STATS ───────────────────────────────────────── */
+function renderStats() {
+  const vals = Object.values(allKeys);
+  $("st-total").textContent   = vals.length;
+  $("st-active").textContent  = vals.filter(e => statusOf(e) === "active").length;
+  $("st-inactive").textContent= vals.filter(e => statusOf(e) === "inactive").length;
+  $("st-expired").textContent = vals.filter(e => statusOf(e) === "expired").length;
+  $("st-hwid").textContent    = vals.filter(e => e.hwid && e.hwid !== "null").length;
+}
+
+/* ─── TABLE RENDER ────────────────────────────────── */
+const STATUS_LABEL = { active:"Activa", inactive:"Inactiva", expired:"Expirada" };
+const STATUS_PILL  = { active:"pill-active", inactive:"pill-inactive", expired:"pill-expired" };
+
+function renderTable() {
+  const q   = search.value.toLowerCase().trim();
+  const fst = fStatus.value;
+  const fd  = fDur.value;
+  const fh  = fHwid.value;
+
+  const rows = Object.values(allKeys).filter(e => {
+    const st = statusOf(e);
+    if (fst !== "all" && st !== fst) return false;
+    if (fd  !== "all" && e.duration !== fd) return false;
+    if (fh === "with"    && !e.hwid) return false;
+    if (fh === "without" &&  e.hwid) return false;
+    if (q && !e.key.toLowerCase().includes(q) &&
+        !(e.hwid || "").toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a, b) => b.createdAt - a.createdAt);
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr class="empty"><td colspan="7">Sin resultados</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(e => {
+    const st  = statusOf(e);
+    const exp = st === "expired";
+    const durLabel = DURATIONS[e.duration]?.label || e.duration;
+    const hwidCell = e.hwid
+      ? `<span class="hwid-txt" title="${e.hwid}">${e.hwid}</span>`
+      : `<span class="hwid-none">Sin dispositivo</span>`;
+    const toggleCls = st === "active" ? "act-toggle-off" : "act-toggle-on";
+    const toggleLbl = st === "active" ? "Desactivar"     : "Activar";
+
+    return `<tr data-key="${e.key}">
+      <td>
+        <div class="key-cell">
+          <span class="key-str">${e.key}</span>
+          <button class="mini-copy" data-copy="${e.key}">cpy</button>
+        </div>
+      </td>
+      <td><span class="pill ${STATUS_PILL[st]}"><span class="pill-dot"></span>${STATUS_LABEL[st]}</span></td>
+      <td><span class="dur-tag">${durLabel}</span></td>
+      <td>${hwidCell}</td>
+      <td><span class="date-txt">${fmt(e.createdAt)}</span></td>
+      <td><span class="date-txt${exp ? " date-exp" : ""}">${fmt(e.expiresAt)}</span></td>
+      <td>
+        <div class="act-group">
+          ${!exp ? `<button class="act ${toggleCls}" data-act="toggle" data-key="${e.key}" data-status="${e.status}">${toggleLbl}</button>` : ""}
+          ${e.hwid ? `<button class="act act-hwid" data-act="reset-hwid" data-key="${e.key}">Reset HWID</button>` : ""}
+          <button class="act act-del" data-act="delete" data-key="${e.key}">Borrar</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+/* ─── TABLE EVENTS ────────────────────────────────── */
+tbody.addEventListener("click", e => {
+  // mini copy
+  const cpBtn = e.target.closest(".mini-copy");
+  if (cpBtn) { copy(cpBtn.dataset.copy); toast_("Copiada", "ok"); return; }
+
+  // action buttons
+  const actBtn = e.target.closest(".act");
+  if (!actBtn) return;
+  const { act, key, status } = actBtn.dataset;
+
+  if (act === "toggle") {
+    const next = status === "active" ? "inactive" : "active";
+    keysRef.child(key).update({ status: next })
+      .then(() => toast_(`Key ${next === "active" ? "activada" : "desactivada"}`, "ok"))
+      .catch(err => toast_(err.message, "err"));
+    return;
+  }
+  if (act === "reset-hwid") {
+    confirm_(`¿Resetear HWID de ${key}?`, () =>
+      keysRef.child(key).update({ hwid: null })
+        .then(() => toast_("HWID reseteado", "ok"))
+        .catch(err => toast_(err.message, "err"))
+    );
+    return;
+  }
+  if (act === "delete") {
+    confirm_(`¿Eliminar permanentemente "${key}"?`, () =>
+      keysRef.child(key).remove()
+        .then(() => toast_("Key eliminada", "ok"))
+        .catch(err => toast_(err.message, "err"))
+    );
+    return;
+  }
+});
+
+/* ─── DURATION SELECTOR ───────────────────────────── */
+$("dur-group").addEventListener("click", e => {
+  const btn = e.target.closest(".btn-dur");
+  if (!btn) return;
+  document.querySelectorAll(".btn-dur").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  activeDur = btn.dataset.d;
+});
+
+/* ─── GENERATE ────────────────────────────────────── */
+$("btn-gen").addEventListener("click", async () => {
+  const count = Math.min(50, Math.max(1, parseInt($("gen-qty").value) || 1));
+  const updates = {}, generated = [];
+
+  for (let i = 0; i < count; i++) {
+    let k;
+    // evitar colisiones con keys existentes o dentro del batch
+    do { k = generateKey(); } while (allKeys[k] || updates[k]);
+    updates[k] = {
+      key:       k,
+      status:    "active",
+      duration:  activeDur,
+      hwid:      null,
+      createdAt: Date.now(),
+      expiresAt: expiryFor(activeDur)
+    };
+    generated.push(k);
+  }
+
+  try {
+    await keysRef.update(updates);
+    showPreview(generated);
+    toast_(`${count} key(s) creada(s)`, "ok");
+  } catch (err) {
+    toast_(err.message, "err");
+  }
+});
+
+function showPreview(keys) {
+  $("preview-lbl").textContent = `${keys.length} key(s) generada(s)`;
+  previewLst.innerHTML = keys.map(k =>
+    `<div class="preview-item">
+      <span class="pkey">${k}</span>
+      <button class="pcopy" data-key="${k}">Copiar</button>
+    </div>`
+  ).join("");
+  previewBox.style.display = "";
+}
+
+previewLst.addEventListener("click", e => {
+  const btn = e.target.closest(".pcopy");
+  if (!btn) return;
+  copy(btn.dataset.key);
+  btn.textContent = "✓";
+  setTimeout(() => btn.textContent = "Copiar", 1500);
+});
+
+$("btn-copy-all").addEventListener("click", () => {
+  const keys = [...previewLst.querySelectorAll(".pkey")].map(el => el.textContent);
+  copy(keys.join("\n"));
+  toast_("Todas copiadas", "ok");
+});
+
+/* ─── DELETE EXPIRED ──────────────────────────────── */
+$("btn-del-exp").addEventListener("click", () => {
+  const expKeys = Object.keys(allKeys).filter(k => isExpired(allKeys[k]));
+  if (!expKeys.length) { toast_("No hay expiradas", "ok"); return; }
+  confirm_(`¿Borrar ${expKeys.length} key(s) expirada(s)?`, () => {
+    const upd = {};
+    expKeys.forEach(k => upd[k] = null);
+    keysRef.update(upd)
+      .then(() => toast_(`${expKeys.length} eliminadas`, "ok"))
+      .catch(err => toast_(err.message, "err"));
+  });
+});
+
+/* ─── EXPORT CSV ──────────────────────────────────── */
+$("btn-export").addEventListener("click", () => {
+  const header = ["Key","Estado","Duración","HWID","Creada","Expira"];
+  const rows   = Object.values(allKeys)
+    .sort((a,b) => b.createdAt - a.createdAt)
+    .map(e => [
+      e.key,
+      statusOf(e),
+      DURATIONS[e.duration]?.label || e.duration,
+      e.hwid || "",
+      fmt(e.createdAt),
+      fmt(e.expiresAt)
+    ]);
+  const csv = [header, ...rows].map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+  const a = Object.assign(document.createElement("a"), {
+    href: URL.createObjectURL(new Blob([csv], { type:"text/csv;charset=utf-8;" })),
+    download: "shadowstore-keys.csv"
+  });
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast_("CSV exportado", "ok");
+});
+
+/* ─── FILTERS ─────────────────────────────────────── */
+[search, fStatus, fDur, fHwid].forEach(el => {
+  el.addEventListener("input",  renderTable);
+  el.addEventListener("change", renderTable);
+});
+
+/* ─── TOAST ───────────────────────────────────────── */
+function toast_(msg, type="info") {
+  clearTimeout(toastTimer);
+  toast.textContent = msg;
+  toast.className = type === "ok" ? "t-ok" : type === "err" ? "t-err" : "";
+  toastTimer = setTimeout(() => toast.classList.add("hide"), 3000);
+}
+
+/* ─── MODAL ───────────────────────────────────────── */
+function confirm_(msg, cb) {
+  modalMsg.textContent = msg;
+  confirmCb = cb;
+  overlay.classList.remove("off");
+}
+function closeModal() {
+  overlay.classList.add("off");
+  confirmCb = null;
+}
+$("modal-ok").addEventListener("click", () => {
+  if (typeof confirmCb === "function") confirmCb();
+  closeModal();
+});
+$("modal-cancel").addEventListener("click", closeModal);
+overlay.addEventListener("click", e => { if (e.target === overlay) closeModal(); });
+
+/* ─── CLIPBOARD ───────────────────────────────────── */
+function copy(text) {
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+function fallbackCopy(text) {
+  const ta = Object.assign(document.createElement("textarea"), {
+    value: text, style: "position:fixed;opacity:0"
+  });
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand("copy");
+  document.body.removeChild(ta);
+}
+</script>
+</body>
+</html>
