@@ -716,7 +716,7 @@ $("btn-gen").addEventListener("click", async () => {
   }
 
   try {
-    await keysRef.update(updates);
+    await Promise.all(generated.map(k => keysRef.child(k).set(updates[k])));
     showPreview(generated);
     toast_(`${count} key(s) creada(s)`, "ok");
   } catch (err) {
