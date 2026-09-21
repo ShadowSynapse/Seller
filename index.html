@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>ShadowStore — Key Panel</title>
+<title>ShadowStore — Key Panel v5</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <style>
@@ -27,6 +27,8 @@
   --yellow-dim: rgba(240,192,64,.1);
   --purple:     #a06ef0;
   --purple-dim: rgba(160,110,240,.1);
+  --blue:       #4a9eff;
+  --blue-dim:   rgba(74,158,255,.1);
   --text:       #dde2f0;
   --text-2:     #6e7a98;
   --text-3:     #32394f;
@@ -61,7 +63,7 @@ body{
   border-bottom:1px solid var(--border);
 }
 .hdr-inner{
-  max-width:1300px;margin:0 auto;
+  max-width:1400px;margin:0 auto;
   padding:12px 24px;
   display:flex;align-items:center;justify-content:space-between;gap:16px;
 }
@@ -98,10 +100,10 @@ body{
 }
 
 /* ─── LAYOUT ──────────────────────────────────────── */
-.main{max-width:1300px;margin:0 auto;padding:24px;display:grid;gap:18px}
+.main{max-width:1400px;margin:0 auto;padding:24px;display:grid;gap:18px}
 
 /* ─── STATS ───────────────────────────────────────── */
-.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.stats-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
 .stat{
   background:var(--surface);border:1px solid var(--border);
   border-radius:var(--r);padding:16px 18px;
@@ -109,13 +111,9 @@ body{
   position:relative;overflow:hidden;
   transition:border-color .2s;
 }
-.stat::before{
-  content:"";position:absolute;inset:0;
-  opacity:0;transition:opacity .2s;pointer-events:none;
-}
 .stat:hover{border-color:var(--border-hi)}
 .stat-num{
-  font-family:var(--mono);font-size:28px;font-weight:700;
+  font-family:var(--mono);font-size:26px;font-weight:700;
   line-height:1;color:var(--text-2);
 }
 .stat-lbl{font-size:10px;letter-spacing:.08em;color:var(--text-3);text-transform:uppercase}
@@ -123,6 +121,8 @@ body{
 .stat.s-inactive .stat-num{color:var(--yellow)}
 .stat.s-expired  .stat-num{color:var(--red)}
 .stat.s-hwid     .stat-num{color:var(--purple)}
+.stat.s-free     .stat-num{color:var(--blue)}
+.stat.s-paid     .stat-num{color:var(--amber)}
 
 /* ─── PANEL ───────────────────────────────────────── */
 .panel{
@@ -135,11 +135,36 @@ body{
   text-transform:uppercase;color:var(--text-3);
 }
 
+/* ─── KEY TYPE TABS ────────────────────────────────── */
+.type-tabs{display:flex;gap:8px;margin-bottom:4px}
+.tab-type{
+  font-family:var(--mono);font-size:12px;font-weight:700;
+  padding:7px 18px;border-radius:var(--r-sm);
+  border:1px solid var(--border-hi);
+  background:transparent;color:var(--text-2);
+  cursor:pointer;transition:all .15s;letter-spacing:.04em;
+}
+.tab-type:hover{border-color:var(--fire);color:var(--fire)}
+.tab-type.active-free{
+  border-color:var(--blue);background:var(--blue-dim);color:var(--blue);
+}
+.tab-type.active-paid{
+  border-color:var(--amber);background:rgba(255,166,26,.12);color:var(--amber);
+}
+.type-badge{
+  display:inline-block;font-size:9px;padding:1px 6px;border-radius:20px;
+  margin-left:5px;font-weight:600;vertical-align:middle;
+}
+.badge-free{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(74,158,255,.3)}
+.badge-paid{background:rgba(255,166,26,.12);color:var(--amber);border:1px solid rgba(255,166,26,.3)}
+
 /* ─── GENERATOR ───────────────────────────────────── */
 .gen-body{padding:16px 20px 20px;display:flex;flex-direction:column;gap:14px}
 .form-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.form-lbl{font-size:12px;color:var(--text-2);min-width:72px;flex-shrink:0}
-.dur-group{display:flex;gap:6px;flex-wrap:wrap}
+.form-lbl{font-size:12px;color:var(--text-2);min-width:80px;flex-shrink:0}
+
+/* duration preset buttons */
+.dur-group{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .btn-dur{
   font-family:var(--mono);font-size:12px;
   padding:6px 14px;border-radius:var(--r-sm);
@@ -153,6 +178,10 @@ body{
   background:var(--fire-dim);
   color:var(--fire);font-weight:600;
 }
+.dur-sep{color:var(--text-3);font-size:11px;margin:0 4px}
+.custom-dur-wrap{display:flex;align-items:center;gap:6px}
+.custom-dur-lbl{font-size:11px;color:var(--text-2)}
+
 .input{
   font-family:var(--sans);font-size:13px;
   padding:8px 12px;border-radius:var(--r-sm);
@@ -162,8 +191,16 @@ body{
 }
 .input:focus{border-color:var(--fire);box-shadow:0 0 0 2px var(--fire-dim)}
 .input-sm{width:80px}
+.input-xs{width:64px}
 select.input{cursor:pointer}
 .hint{font-size:11px;color:var(--text-3)}
+.hint-paid{font-size:11px;color:var(--amber)}
+.hint-hwid{
+  font-size:11px;color:var(--purple);
+  background:var(--purple-dim);border:1px solid rgba(160,110,240,.25);
+  padding:6px 12px;border-radius:var(--r-sm);display:inline-flex;align-items:center;gap:6px;
+}
+
 .btn{
   display:inline-flex;align-items:center;gap:7px;
   font-size:13px;font-weight:600;
@@ -184,6 +221,10 @@ select.input{cursor:pointer}
 .btn-ghost:hover{border-color:var(--fire);color:var(--fire)}
 .btn-danger{background:var(--red);color:#fff}
 .btn-danger:hover{filter:brightness(1.1)}
+.btn-blue{background:linear-gradient(135deg,var(--blue),#2277cc);color:#fff}
+.btn-blue:hover{filter:brightness(1.1)}
+.btn-purple{background:linear-gradient(135deg,var(--purple),#7a44c4);color:#fff}
+.btn-purple:hover{filter:brightness(1.1)}
 .btn-sm{
   font-size:11px;padding:5px 11px;border-radius:var(--r-sm);
   border:1px solid var(--border-hi);background:transparent;
@@ -192,6 +233,15 @@ select.input{cursor:pointer}
 .btn-sm:hover{border-color:var(--fire);color:var(--fire)}
 .btn-sm-danger{border-color:rgba(240,87,110,.4);color:var(--red)}
 .btn-sm-danger:hover{background:var(--red-dim)}
+.btn-sm-blue{border-color:rgba(74,158,255,.4);color:var(--blue)}
+.btn-sm-blue:hover{background:var(--blue-dim)}
+.btn-sm-green{border-color:rgba(47,232,122,.4);color:var(--green)}
+.btn-sm-green:hover{background:var(--green-dim)}
+.btn-sm-amber{border-color:rgba(255,166,26,.4);color:var(--amber)}
+.btn-sm-amber:hover{background:rgba(255,166,26,.1)}
+.btn-sm-purple{border-color:rgba(160,110,240,.4);color:var(--purple)}
+.btn-sm-purple:hover{background:var(--purple-dim)}
+.btn-disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
 
 /* ─── KEY PREVIEW ─────────────────────────────────── */
 .preview-box{
@@ -202,8 +252,10 @@ select.input{cursor:pointer}
   display:flex;align-items:center;justify-content:space-between;
   padding:8px 14px;background:var(--surface-2);
   border-bottom:1px solid var(--border);
+  gap:8px;flex-wrap:wrap;
 }
 .preview-top-lbl{font-size:11px;color:var(--text-2)}
+.preview-top-acts{display:flex;gap:6px;flex-wrap:wrap}
 .preview-list{max-height:220px;overflow-y:auto}
 .preview-item{
   display:flex;align-items:center;justify-content:space-between;
@@ -213,125 +265,241 @@ select.input{cursor:pointer}
 .preview-item:last-child{border-bottom:none}
 .preview-item:hover{background:var(--surface-2)}
 .pkey{font-family:var(--mono);font-size:13px;color:var(--fire);letter-spacing:.05em}
+.pkey-meta{font-size:10px;color:var(--text-3);margin-left:10px}
+.preview-item-acts{display:flex;gap:6px}
 .pcopy{
   font-size:10px;padding:3px 8px;border-radius:3px;
   border:1px solid var(--border-hi);background:transparent;
   color:var(--text-3);cursor:pointer;transition:all .12s;
 }
 .pcopy:hover{color:var(--fire);border-color:var(--fire)}
+.pexport-one{
+  font-size:10px;padding:3px 8px;border-radius:3px;
+  border:1px solid rgba(74,158,255,.35);background:transparent;
+  color:var(--blue);cursor:pointer;transition:all .12s;
+}
+.pexport-one:hover{background:var(--blue-dim)}
+
+/* ─── GLOBAL ACTIONS BAR ──────────────────────────── */
+.global-bar{
+  display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+  padding:14px 20px;border-bottom:1px solid var(--border);
+  background:rgba(0,0,0,.2);
+}
+.global-bar-lbl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin-right:4px}
+.add-time-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* ─── BULK ACTION BAR ─────────────────────────────── */
+.bulk-bar{
+  display:none;
+  padding:10px 20px;
+  background:rgba(242,107,10,.06);
+  border-bottom:1px solid rgba(242,107,10,.2);
+  align-items:center;gap:10px;flex-wrap:wrap;
+}
+.bulk-bar.visible{display:flex}
+.bulk-count{font-size:12px;color:var(--fire);font-weight:600;font-family:var(--mono)}
+.bulk-acts{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
 
 /* ─── FILTER BAR ──────────────────────────────────── */
-.filter-bar{padding:14px 20px;display:flex;gap:8px;flex-wrap:wrap}
+.filter-bar{padding:14px 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 #search{flex:1;min-width:180px}
+
+/* ─── SECTION DIVIDER (FREE / PAID) ──────────────── */
+.section-divider{
+  display:flex;align-items:center;gap:12px;
+  padding:8px 20px;
+  border-top:1px solid var(--border);
+  background:var(--surface-2);
+  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+}
+.sdiv-free{color:var(--blue)}
+.sdiv-paid{color:var(--amber)}
+.sdiv-count{
+  font-family:var(--mono);font-size:11px;
+  background:var(--bg);border:1px solid var(--border-hi);
+  padding:2px 8px;border-radius:20px;
+  color:var(--text-2);margin-left:auto;
+}
 
 /* ─── TABLE ───────────────────────────────────────── */
 .tbl-head{
   display:flex;align-items:center;justify-content:space-between;
   padding:14px 20px 12px;border-bottom:1px solid var(--border);
+  gap:8px;flex-wrap:wrap;
 }
 .tbl-head-lbl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
-.tbl-actions{display:flex;gap:8px}
+.tbl-actions{display:flex;gap:8px;flex-wrap:wrap}
 .tbl-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{
-  text-align:left;padding:10px 16px;
-  font-size:10px;font-weight:700;
-  text-transform:uppercase;letter-spacing:.08em;
+  padding:10px 14px;text-align:left;
+  font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
   color:var(--text-3);border-bottom:1px solid var(--border);
   white-space:nowrap;
 }
-td{padding:10px 16px;border-bottom:1px solid var(--border);vertical-align:middle}
-tbody tr:last-child td{border-bottom:none}
-tbody tr:hover{background:var(--surface-2)}
-.empty td{text-align:center;color:var(--text-3);padding:40px;font-size:13px}
-/* key cell */
+td{
+  padding:10px 14px;border-bottom:1px solid var(--border);
+  vertical-align:middle;
+}
+tr:last-child td{border-bottom:none}
+tr.selected td{background:rgba(242,107,10,.04)}
+tr:hover td{background:var(--surface-2)}
+tr.empty td{text-align:center;color:var(--text-3);padding:32px}
+
+.th-check,.td-check{width:36px;padding-left:16px!important}
+.cb{accent-color:var(--fire);cursor:pointer;width:14px;height:14px}
+
 .key-cell{display:flex;align-items:center;gap:8px}
-.key-str{font-family:var(--mono);font-size:12px;letter-spacing:.04em}
+.key-str{font-family:var(--mono);font-size:13px;color:var(--fire);letter-spacing:.04em}
 .mini-copy{
   font-size:9px;padding:2px 6px;border-radius:3px;
   border:1px solid var(--border-hi);background:transparent;
-  color:var(--text-3);cursor:pointer;
-  opacity:0;transition:opacity .12s,color .12s;
+  color:var(--text-3);cursor:pointer;transition:all .12s;
 }
-tr:hover .mini-copy{opacity:1}
 .mini-copy:hover{color:var(--fire);border-color:var(--fire)}
-/* pills */
+
 .pill{
   display:inline-flex;align-items:center;gap:5px;
-  font-size:10px;font-weight:700;letter-spacing:.04em;
-  padding:4px 10px;border-radius:20px;white-space:nowrap;
+  font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;
+  letter-spacing:.04em;
 }
-.pill-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
-.pill-active  {background:var(--green-dim);color:var(--green)}
-.pill-inactive{background:var(--yellow-dim);color:var(--yellow)}
-.pill-expired {background:var(--red-dim);color:var(--red)}
-/* tags */
+.pill-dot{width:5px;height:5px;border-radius:50%}
+.pill-active  {background:var(--green-dim);color:var(--green);border:1px solid rgba(47,232,122,.25)}
+.pill-inactive{background:var(--yellow-dim);color:var(--yellow);border:1px solid rgba(240,192,64,.25)}
+.pill-expired {background:var(--red-dim);color:var(--red);border:1px solid rgba(240,87,110,.25)}
+.pill-paused  {background:var(--purple-dim);color:var(--purple);border:1px solid rgba(160,110,240,.25)}
+.pill-active  .pill-dot{background:var(--green)}
+.pill-inactive .pill-dot{background:var(--yellow)}
+.pill-expired .pill-dot{background:var(--red)}
+.pill-paused  .pill-dot{background:var(--purple)}
+
+.ktype{
+  font-family:var(--mono);font-size:10px;font-weight:700;
+  padding:2px 8px;border-radius:4px;letter-spacing:.06em;
+}
+.ktype-free{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(74,158,255,.25)}
+.ktype-paid{background:rgba(255,166,26,.12);color:var(--amber);border:1px solid rgba(255,166,26,.25)}
+
 .dur-tag{
-  font-family:var(--mono);font-size:10px;
-  padding:3px 9px;border-radius:3px;
-  background:var(--surface-2);border:1px solid var(--border-hi);
-  color:var(--text-2);
+  font-family:var(--mono);font-size:11px;color:var(--text-2);
 }
+.date-txt{font-size:12px;color:var(--text-2)}
+.date-exp{color:var(--red)}
+
 .hwid-txt{
-  font-family:var(--mono);font-size:10px;color:var(--text-2);
-  max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-family:var(--mono);font-size:10px;color:var(--purple);
+  max-width:130px;display:inline-block;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  vertical-align:middle;
 }
 .hwid-none{font-size:11px;color:var(--text-3);font-style:italic}
-.date-txt{font-size:11px;color:var(--text-2);white-space:nowrap}
-.date-exp{color:var(--red)}
-/* action buttons */
+/* HWID indicator — timer state */
+.hwid-waiting{font-size:10px;color:var(--yellow);font-family:var(--mono)}
+
 .act-group{display:flex;gap:5px;flex-wrap:wrap}
 .act{
-  font-size:10px;padding:4px 10px;border-radius:var(--r-sm);
+  font-size:10px;padding:4px 9px;border-radius:var(--r-sm);
   border:1px solid var(--border-hi);background:transparent;
-  cursor:pointer;transition:all .15s;white-space:nowrap;
+  color:var(--text-2);cursor:pointer;transition:all .12s;white-space:nowrap;
 }
+.act:hover{border-color:var(--fire);color:var(--fire)}
 .act-toggle-off{color:var(--yellow);border-color:rgba(240,192,64,.35)}
 .act-toggle-off:hover{background:var(--yellow-dim)}
 .act-toggle-on{color:var(--green);border-color:rgba(47,232,122,.35)}
 .act-toggle-on:hover{background:var(--green-dim)}
-.act-hwid{color:var(--purple);border-color:rgba(160,110,240,.35)}
-.act-hwid:hover{background:var(--purple-dim)}
 .act-del{color:var(--red);border-color:rgba(240,87,110,.35)}
 .act-del:hover{background:var(--red-dim)}
+.act-export{color:var(--blue);border-color:rgba(74,158,255,.35)}
+.act-export:hover{background:var(--blue-dim)}
+.act-hwid{color:var(--purple);border-color:rgba(160,110,240,.35)}
+.act-hwid:hover{background:var(--purple-dim)}
+.act-pause{color:var(--purple);border-color:rgba(160,110,240,.35)}
+.act-pause:hover{background:var(--purple-dim)}
+.act-resume{color:var(--green);border-color:rgba(47,232,122,.35)}
+.act-resume:hover{background:var(--green-dim)}
+.act-addtime{color:var(--amber);border-color:rgba(255,166,26,.35)}
+.act-addtime:hover{background:rgba(255,166,26,.1)}
 
-/* ─── TOAST ───────────────────────────────────────── */
-#toast{
-  position:fixed;bottom:22px;right:22px;z-index:9999;
-  background:var(--surface);border:1px solid var(--border-hi);
-  border-left:3px solid var(--fire);
-  padding:11px 18px;border-radius:var(--r);
-  font-size:13px;color:var(--text);
-  box-shadow:var(--shadow);
-  transition:opacity .22s,transform .22s;
-  max-width:300px;pointer-events:none;
+/* ─── SHARE PANEL ──────────────────────────────────── */
+.share-panel{
+  background:var(--surface);border:1px solid rgba(47,232,122,.2);
+  border-radius:var(--r-lg);overflow:hidden;
 }
-#toast.hide{opacity:0;transform:translateY(8px)}
-#toast.t-ok {border-left-color:var(--green)}
-#toast.t-err{border-left-color:var(--red)}
+.share-panel-head{
+  padding:14px 20px;display:flex;align-items:center;justify-content:space-between;
+  background:rgba(47,232,122,.04);border-bottom:1px solid rgba(47,232,122,.15);
+  flex-wrap:wrap;gap:10px;
+}
+.share-panel-title{font-size:12px;font-weight:700;color:var(--green);letter-spacing:.06em;text-transform:uppercase}
+.share-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.share-body{padding:16px 20px}
+.share-hint{font-size:11px;color:var(--text-3);margin-bottom:12px}
+.share-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;max-height:260px;overflow-y:auto}
+.share-item{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 12px;border-radius:var(--r-sm);
+  border:1px solid var(--border-hi);background:var(--bg);
+  cursor:pointer;transition:all .15s;
+}
+.share-item:hover{border-color:var(--green)}
+.share-item.selected{border-color:var(--green);background:var(--green-dim)}
+.share-item-cb{accent-color:var(--green);cursor:pointer;flex-shrink:0}
+.share-item-key{font-family:var(--mono);font-size:12px;color:var(--text)}
+.share-item-meta{font-size:10px;color:var(--text-3);margin-left:auto;white-space:nowrap}
+.share-output{
+  margin-top:12px;display:none;
+  background:var(--bg);border:1px solid var(--border-hi);
+  border-radius:var(--r-sm);padding:12px;
+  font-family:var(--mono);font-size:12px;color:var(--green);
+  max-height:120px;overflow-y:auto;
+  white-space:pre;
+}
+.share-output.visible{display:block}
+.share-footer{
+  margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;
+  justify-content:flex-end;
+}
 
-/* ─── MODAL ───────────────────────────────────────── */
+/* ─── MODAL — OVERLAY ─────────────────────────────── */
 .overlay{
-  position:fixed;inset:0;z-index:9998;
-  background:rgba(0,0,0,.75);backdrop-filter:blur(5px);
+  position:fixed;inset:0;z-index:500;
   display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.75);backdrop-filter:blur(5px);
 }
 .overlay.off{display:none}
 .modal{
   background:var(--surface);border:1px solid var(--border-hi);
-  border-radius:var(--r-lg);padding:26px 28px;
-  max-width:320px;width:90%;box-shadow:var(--shadow);
+  border-radius:var(--r-lg);padding:28px 32px;
+  min-width:320px;max-width:480px;
+  box-shadow:var(--shadow);
 }
-.modal-msg{font-size:14px;line-height:1.65;margin-bottom:20px;color:var(--text)}
+.modal-msg{margin-bottom:24px;font-size:14px;line-height:1.5;color:var(--text)}
 .modal-foot{display:flex;gap:10px;justify-content:flex-end}
 
-/* ─── RESPONSIVE ──────────────────────────────────── */
-@media(max-width:1000px){.stats-grid{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:640px){
-  .stats-grid{grid-template-columns:repeat(2,1fr)}
-  .main{padding:12px}
-  .hdr-inner{padding:10px 14px}
+/* ─── TOAST ───────────────────────────────────────── */
+#toast{
+  position:fixed;bottom:24px;right:24px;z-index:999;
+  font-size:13px;padding:10px 18px;border-radius:var(--r);
+  box-shadow:var(--shadow);transition:opacity .3s;
+  background:var(--surface-2);border:1px solid var(--border-hi);color:var(--text);
 }
+#toast.t-ok {background:var(--green-dim);border-color:rgba(47,232,122,.4);color:var(--green)}
+#toast.t-err{background:var(--red-dim);border-color:rgba(240,87,110,.4);color:var(--red)}
+#toast.hide{opacity:0;pointer-events:none}
+
+/* ─── MODAL ADD TIME ─────────────────────────────── */
+.addtime-grid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.addtime-opt{
+  font-family:var(--mono);font-size:12px;
+  padding:7px 16px;border-radius:var(--r-sm);
+  border:1px solid var(--border-hi);background:transparent;
+  color:var(--text-2);cursor:pointer;transition:all .15s;
+}
+.addtime-opt:hover{border-color:var(--amber);color:var(--amber)}
+.addtime-opt.sel{border-color:var(--amber);background:rgba(255,166,26,.1);color:var(--amber);font-weight:600}
+.addtime-custom{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.modal-sub{font-size:11px;color:var(--text-3);margin-bottom:16px}
 </style>
 </head>
 <body>
@@ -340,13 +508,13 @@ tr:hover .mini-copy{opacity:1}
 <header class="hdr">
   <div class="hdr-inner">
     <div class="logo">
-      <div class="logo-mark">◆</div>
+      <div class="logo-mark">🔥</div>
       <span class="logo-name">Shadow<span>Store</span></span>
-      <span class="logo-ver">Panel v3</span>
+      <span class="logo-ver">v5</span>
     </div>
     <div class="hdr-right">
       <div class="conn-pill">
-        <span id="conn-dot" class="conn-dot connecting"></span>
+        <span class="conn-dot connecting" id="conn-dot"></span>
         <span id="conn-lbl">Conectando…</span>
       </div>
       <span id="badge-count">— keys</span>
@@ -358,86 +526,208 @@ tr:hover .mini-copy{opacity:1}
 
   <!-- STATS -->
   <div class="stats-grid">
-    <div class="stat"><span id="st-total" class="stat-num">—</span><span class="stat-lbl">Total</span></div>
-    <div class="stat s-active"><span id="st-active" class="stat-num">—</span><span class="stat-lbl">Activas</span></div>
+    <div class="stat">          <span id="st-total"    class="stat-num">—</span><span class="stat-lbl">Total</span></div>
+    <div class="stat s-active"> <span id="st-active"   class="stat-num">—</span><span class="stat-lbl">Activas</span></div>
     <div class="stat s-inactive"><span id="st-inactive" class="stat-num">—</span><span class="stat-lbl">Inactivas</span></div>
-    <div class="stat s-expired"><span id="st-expired" class="stat-num">—</span><span class="stat-lbl">Expiradas</span></div>
-    <div class="stat s-hwid"><span id="st-hwid" class="stat-num">—</span><span class="stat-lbl">Con HWID</span></div>
+    <div class="stat s-expired"> <span id="st-expired"  class="stat-num">—</span><span class="stat-lbl">Expiradas</span></div>
+    <div class="stat s-free">   <span id="st-free"     class="stat-num">—</span><span class="stat-lbl">Free</span></div>
+    <div class="stat s-paid">   <span id="st-paid"     class="stat-num">—</span><span class="stat-lbl">Paid</span></div>
   </div>
 
   <!-- GENERATOR -->
   <div class="panel">
-    <div class="panel-head">Generar Keys</div>
+    <div class="panel-head">Generador de Keys</div>
     <div class="gen-body">
+
+      <!-- Key type selector -->
+      <div class="form-row">
+        <span class="form-lbl">Tipo</span>
+        <div class="type-tabs">
+          <button class="tab-type active-free" id="tab-free" onclick="setKeyType('free')">
+            🆓 Free <span class="type-badge badge-free">hasta 100</span>
+          </button>
+          <button class="tab-type" id="tab-paid" onclick="setKeyType('paid')">
+            💎 Paid <span class="type-badge badge-paid">1 a 1</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Duration -->
       <div class="form-row">
         <span class="form-lbl">Duración</span>
         <div class="dur-group" id="dur-group">
-          <button class="btn-dur active" data-d="1d">1 Día</button>
-          <button class="btn-dur" data-d="7d">7 Días</button>
-          <button class="btn-dur" data-d="15d">15 Días</button>
-          <button class="btn-dur" data-d="30d">30 Días</button>
+          <button class="btn-dur" data-d="1">1D</button>
+          <button class="btn-dur" data-d="7">7D</button>
+          <button class="btn-dur" data-d="14">14D</button>
+          <button class="btn-dur" data-d="30">30D</button>
+          <button class="btn-dur" data-d="90">90D</button>
+          <button class="btn-dur" data-d="180">180D</button>
+          <button class="btn-dur" data-d="365">1 Año</button>
+          <span class="dur-sep">|</span>
+          <div class="custom-dur-wrap">
+            <span class="custom-dur-lbl">Custom:</span>
+            <input id="custom-days" type="number" min="1" max="3650" placeholder="días" class="input input-xs"/>
+            <button class="btn-sm" onclick="applyCustomDur()">✓</button>
+          </div>
         </div>
       </div>
-      <div class="form-row">
+
+      <!-- Qty (free only) -->
+      <div class="form-row" id="row-qty">
         <span class="form-lbl">Cantidad</span>
-        <input id="gen-qty" class="input input-sm" type="number" min="1" max="50" value="1"/>
-        <span class="hint">máx 50</span>
-        <button id="btn-gen" class="btn btn-fire">⚡ Generar</button>
+        <input id="gen-qty" type="number" min="1" max="100" value="1" class="input input-sm"/>
+        <span class="hint">máx 100 por batch</span>
       </div>
-      <div id="preview-box" class="preview-box" style="display:none">
+
+      <!-- HWID hint -->
+      <div class="form-row">
+        <span class="form-lbl"></span>
+        <span class="hint-hwid">⏱ El tiempo corre <strong>solo cuando hay HWID</strong> registrado. Sin HWID, el contador está pausado.</span>
+      </div>
+
+      <!-- Paid note -->
+      <div class="form-row" id="row-paid-note" style="display:none">
+        <span class="form-lbl"></span>
+        <span class="hint-paid">💎 Paid: se genera 1 key a la vez. Repite para más.</span>
+        <button id="btn-gen-paid" class="btn btn-fire" style="background:linear-gradient(135deg,#ffa61a,#cc7a00)" onclick="handleGenerate()">💎 Generar 1 Key</button>
+      </div>
+
+      <!-- Actions row -->
+      <div class="form-row">
+        <span class="form-lbl"></span>
+        <span id="active-dur-display" class="hint">Selecciona una duración ↑</span>
+      </div>
+      <div class="form-row" id="row-gen-btn">
+        <span class="form-lbl"></span>
+        <button class="btn btn-fire" onclick="handleGenerate()" id="btn-gen-free">🔑 Generar Keys</button>
+      </div>
+
+      <!-- Preview box -->
+      <div class="preview-box" id="preview-box" style="display:none">
         <div class="preview-top">
-          <span id="preview-lbl" class="preview-top-lbl"></span>
-          <button id="btn-copy-all" class="btn-sm">Copiar todo</button>
+          <span class="preview-top-lbl" id="preview-lbl"></span>
+          <div class="preview-top-acts">
+            <button class="btn-sm" id="btn-copy-all">📋 Copiar todas</button>
+            <button class="btn-sm btn-sm-blue" id="btn-export-preview-all">💾 .txt</button>
+          </div>
         </div>
-        <div id="preview-list" class="preview-list"></div>
+        <div class="preview-list" id="preview-list"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SHARE PANEL -->
+  <div class="share-panel">
+    <div class="share-panel-head">
+      <span class="share-panel-title">🔗 Panel de Compartir</span>
+      <div class="share-controls">
+        <select id="share-filter-type" class="input" style="font-size:12px;padding:5px 10px">
+          <option value="all">Todos los tipos</option>
+          <option value="free">Solo Free</option>
+          <option value="paid">Solo Paid</option>
+        </select>
+        <select id="share-filter-status" class="input" style="font-size:12px;padding:5px 10px">
+          <option value="active">Solo Activas</option>
+          <option value="all">Todos los estados</option>
+        </select>
+        <button class="btn-sm btn-sm-green" onclick="selectAllShare()">✔ Sel. todas</button>
+        <button class="btn-sm" onclick="clearShareSel()">✕ Limpiar</button>
+      </div>
+    </div>
+    <div class="share-body">
+      <p class="share-hint">Selecciona las keys que quieres compartir. Free y Paid se muestran separados. El output es solo las keys, listo para copiar/enviar.</p>
+      <div class="share-grid" id="share-grid"></div>
+      <div class="share-output" id="share-output"></div>
+      <div class="share-footer">
+        <button class="btn-sm" onclick="genShareOutput()">👁 Previsualizar</button>
+        <button class="btn-sm btn-sm-green" onclick="copyShareOutput()">📋 Copiar</button>
+        <button class="btn-sm btn-sm-blue" onclick="downloadShareTxt()">💾 .txt</button>
       </div>
     </div>
   </div>
 
-  <!-- FILTER -->
-  <div class="panel">
-    <div class="filter-bar">
-      <input id="search" class="input" placeholder="Buscar key o HWID…"/>
-      <select id="f-status" class="input">
-        <option value="all">Todos</option>
-        <option value="active">Activas</option>
-        <option value="inactive">Inactivas</option>
-        <option value="expired">Expiradas</option>
-      </select>
-      <select id="f-dur" class="input">
-        <option value="all">Todas las duraciones</option>
-        <option value="1d">1 Día</option>
-        <option value="7d">7 Días</option>
-        <option value="15d">15 Días</option>
-        <option value="30d">30 Días</option>
-      </select>
-      <select id="f-hwid" class="input">
-        <option value="all">Todos</option>
-        <option value="with">Con HWID</option>
-        <option value="without">Sin HWID</option>
-      </select>
-    </div>
-  </div>
-
-  <!-- TABLE -->
+  <!-- MAIN TABLE -->
   <div class="panel">
     <div class="tbl-head">
       <span class="tbl-head-lbl">Keys Registradas</span>
       <div class="tbl-actions">
-        <button id="btn-export" class="btn-sm">⬇ CSV</button>
-        <button id="btn-del-exp" class="btn-sm btn-sm-danger">Borrar Expiradas</button>
+        <button id="btn-export-csv" class="btn-sm">⬇ CSV</button>
+        <button id="btn-export-all-txt" class="btn-sm btn-sm-blue">💾 .txt (visible)</button>
+        <button id="btn-del-exp" class="btn-sm btn-sm-danger">🗑 Borrar Expiradas</button>
       </div>
     </div>
+
+    <!-- Global actions (pausar todas / agregar tiempo a todas) -->
+    <div class="global-bar">
+      <span class="global-bar-lbl">Acciones globales</span>
+      <button class="btn-sm btn-sm-purple" onclick="pauseAllKeys()">⏸ Pausar TODAS</button>
+      <button class="btn-sm btn-sm-green"  onclick="resumeAllKeys()">▶ Reanudar TODAS</button>
+      <span style="color:var(--border-hi);margin:0 4px">|</span>
+      <div class="add-time-row">
+        <span style="font-size:11px;color:var(--text-3)">+ tiempo a TODAS:</span>
+        <select id="global-add-days" class="input" style="font-size:12px;padding:5px 10px">
+          <option value="">— días —</option>
+          <option value="1">+1 día</option>
+          <option value="3">+3 días</option>
+          <option value="7">+7 días</option>
+          <option value="14">+14 días</option>
+          <option value="30">+30 días</option>
+          <option value="90">+90 días</option>
+          <option value="custom">Custom…</option>
+        </select>
+        <button class="btn-sm btn-sm-amber" onclick="addTimeToAll()">⏱ Agregar</button>
+      </div>
+    </div>
+
+    <!-- Bulk action bar -->
+    <div class="bulk-bar" id="bulk-bar">
+      <span class="bulk-count" id="bulk-count">0 seleccionadas</span>
+      <div class="bulk-acts">
+        <button class="btn-sm btn-sm-green"  id="bulk-activate">✔ Activar</button>
+        <button class="btn-sm btn-sm-amber"  id="bulk-deactivate">⏸ Desactivar</button>
+        <button class="btn-sm btn-sm-purple" id="bulk-pause">⏸ Pausar timer</button>
+        <button class="btn-sm btn-sm-green"  id="bulk-resume">▶ Reanudar timer</button>
+        <button class="btn-sm btn-sm-amber"  id="bulk-addtime">⏱ +Tiempo</button>
+        <button class="btn-sm btn-sm-blue"   id="bulk-export-txt">💾 .txt</button>
+        <button class="btn-sm btn-sm-danger" id="bulk-delete">🗑 Borrar</button>
+        <button class="btn-sm"               id="bulk-clear">✕ Cancelar</button>
+      </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <input id="search" class="input" placeholder="Buscar key o HWID…"/>
+      <select id="f-status" class="input">
+        <option value="all">Todos los estados</option>
+        <option value="active">Activas</option>
+        <option value="inactive">Inactivas</option>
+        <option value="expired">Expiradas</option>
+        <option value="paused">Timer pausado</option>
+      </select>
+      <select id="f-type" class="input">
+        <option value="all">Todos los tipos</option>
+        <option value="free">Free</option>
+        <option value="paid">Paid</option>
+      </select>
+      <select id="f-hwid" class="input">
+        <option value="all">Todos (HWID)</option>
+        <option value="with">Con HWID</option>
+        <option value="without">Sin HWID</option>
+      </select>
+    </div>
+
     <div class="tbl-wrap">
       <table>
         <thead>
           <tr>
-            <th>Key</th><th>Estado</th><th>Duración</th>
+            <th class="th-check"><input type="checkbox" class="cb" id="cb-all" title="Seleccionar todo"/></th>
+            <th>Key</th><th>Tipo</th><th>Estado</th><th>Timer</th><th>Duración</th>
             <th>HWID</th><th>Creada</th><th>Expira</th><th>Acciones</th>
           </tr>
         </thead>
         <tbody id="tbl-body">
-          <tr class="empty"><td colspan="7">Conectando…</td></tr>
+          <tr class="empty"><td colspan="10">Conectando…</td></tr>
         </tbody>
       </table>
     </div>
@@ -459,10 +749,35 @@ tr:hover .mini-copy{opacity:1}
   </div>
 </div>
 
+<!-- ADD TIME MODAL -->
+<div id="overlay-addtime" class="overlay off">
+  <div class="modal">
+    <p class="modal-msg" id="addtime-title">Agregar tiempo</p>
+    <p class="modal-sub" id="addtime-sub">Selecciona cuántos días agregar:</p>
+    <div class="addtime-grid" id="addtime-grid">
+      <button class="addtime-opt" data-d="1">+1 día</button>
+      <button class="addtime-opt" data-d="3">+3 días</button>
+      <button class="addtime-opt" data-d="7">+7 días</button>
+      <button class="addtime-opt" data-d="14">+14 días</button>
+      <button class="addtime-opt" data-d="30">+30 días</button>
+      <button class="addtime-opt" data-d="90">+90 días</button>
+    </div>
+    <div class="addtime-custom">
+      <span style="font-size:12px;color:var(--text-2)">Custom:</span>
+      <input id="addtime-custom-days" type="number" min="1" max="3650" placeholder="días" class="input input-xs"/>
+      <button class="btn-sm" onclick="selectAddTimeDays(parseInt(document.getElementById('addtime-custom-days').value))">✓</button>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeAddTimeModal()">Cancelar</button>
+      <button class="btn btn-fire" id="addtime-ok" onclick="confirmAddTime()" disabled>⏱ Agregar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 "use strict";
 
-/* ─── CONFIG ──────────────────────────────────────── */
+/* ─── FIREBASE CONFIG ─────────────────────────────── */
 const FIREBASE_CFG = {
   apiKey:            "AIzaSyAVH-wVqtEZRmXJhJGRTur0r7k12iLsahQ",
   authDomain:        "chams-module.firebaseapp.com",
@@ -473,24 +788,14 @@ const FIREBASE_CFG = {
   appId:             "1:790288424755:web:89f26cb07208ee28cfa846"
 };
 
-const DURATIONS = {
-  "1d" : { label:"1 Día",   days:1  },
-  "7d" : { label:"7 Días",  days:7  },
-  "15d": { label:"15 Días", days:15 },
-  "30d": { label:"30 Días", days:30 }
-};
-
-/* ─── FIREBASE INIT ───────────────────────────────── */
 firebase.initializeApp(FIREBASE_CFG);
 const db      = firebase.app().database(FIREBASE_CFG.databaseURL);
 const keysRef = db.ref("keys");
 
 /* ─── KEYGEN ──────────────────────────────────────── */
-// A-Z + 0-9 ONLY — Firebase RTDB safe, URL safe
-// Símbolos (#,$,%,etc.) rompían nodos de Firebase y URLs del mod nativo.
 const ALPHA   = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const NUMERIC = "0123456789";
-const FULL    = ALPHA + NUMERIC; // 36 chars
+const FULL    = ALPHA + NUMERIC;
 
 function secureRand(charset) {
   const cap = Math.floor(0x100000000 / charset.length) * charset.length;
@@ -499,7 +804,6 @@ function secureRand(charset) {
   do { crypto.getRandomValues(buf); v = buf[0]; } while (v >= cap);
   return charset[v % charset.length];
 }
-
 function fisherYates(arr) {
   const buf = new Uint32Array(1);
   for (let i = arr.length - 1; i > 0; i--) {
@@ -509,23 +813,45 @@ function fisherYates(arr) {
   }
   return arr;
 }
-
 function generateKey() {
-  // Garantizar ≥2 letras y ≥2 dígitos
-  const mandatory = [
-    secureRand(ALPHA), secureRand(ALPHA),
-    secureRand(NUMERIC), secureRand(NUMERIC)
-  ];
-  const rest = [secureRand(FULL), secureRand(FULL)];
+  const mandatory = [secureRand(ALPHA), secureRand(ALPHA), secureRand(NUMERIC), secureRand(NUMERIC)];
+  const rest  = [secureRand(FULL), secureRand(FULL)];
   const chars = fisherYates([...mandatory, ...rest]);
   return "SHADOW-" + chars.join("");
 }
 
-/* ─── HELPERS ─────────────────────────────────────── */
-function expiryFor(durKey) {
-  return Date.now() + DURATIONS[durKey].days * 86400000;
-}
+/* ─── STATE ───────────────────────────────────────── */
+let allKeys        = {};
+let activeDays     = null;
+let activeKeyType  = "free";
+let confirmCb      = null;
+let toastTimer     = null;
+let selectedKeys   = new Set();
+let shareSelected  = new Set();
+// Add-time modal state
+let addTimeCb      = null;
+let addTimeDays    = null;
 
+/* ─── DOM REFS ────────────────────────────────────── */
+const $        = id => document.getElementById(id);
+const tbody    = $("tbl-body");
+const badge    = $("badge-count");
+const connDot  = $("conn-dot");
+const connLbl  = $("conn-lbl");
+const previewBox = $("preview-box");
+const previewLst = $("preview-list");
+const search   = $("search");
+const fStatus  = $("f-status");
+const fType    = $("f-type");
+const fHwid    = $("f-hwid");
+const toast    = $("toast");
+const overlay  = $("overlay");
+const modalMsg = $("modal-msg");
+const cbAll    = $("cb-all");
+const bulkBar  = $("bulk-bar");
+const bulkCount = $("bulk-count");
+
+/* ─── HELPERS ─────────────────────────────────────── */
 function fmt(ts) {
   if (!ts) return "—";
   return new Date(ts).toLocaleString("es-ES", {
@@ -534,34 +860,168 @@ function fmt(ts) {
   });
 }
 
-function isExpired(e) { return Date.now() > e.expiresAt; }
-
-function statusOf(entry) {
-  if (isExpired(entry)) return "expired";
-  return entry.status === "active" ? "active" : "inactive";
+/*
+ * HWID-gated expiry logic
+ * ─────────────────────────────────────────────────────────
+ * Each key stores:
+ *   days       : total days purchased
+ *   createdAt  : timestamp
+ *   expiresAt  : running deadline — updated only when HWID is present
+ *   hwid       : null | string
+ *   timerPaused: true | undefined
+ *   pausedAt   : timestamp when pause started | null
+ *   remainingMs: ms remaining when paused | null
+ *
+ * Rules:
+ *  - If no HWID → timer is frozen, expiry shows as "esperando HWID"
+ *  - If timerPaused=true → timer manually paused by admin
+ *  - If HWID present & not paused → normal countdown
+ */
+function isTimerFrozen(e) {
+  // Frozen = no HWID registered yet
+  return !e.hwid;
+}
+function isTimerPaused(e) {
+  return !!e.timerPaused;
+}
+function effectiveExpiresAt(e) {
+  // When paused, expiresAt is stored as the frozen deadline
+  // When no HWID, we just show waiting state
+  return e.expiresAt || 0;
+}
+function isExpired(e) {
+  if (isTimerFrozen(e)) return false;  // No HWID → never expired yet
+  if (isTimerPaused(e)) return false;  // Paused → not expiring
+  return Date.now() > (e.expiresAt || 0);
+}
+function statusOf(e) {
+  if (isTimerPaused(e)) return "paused";
+  if (isExpired(e)) return "expired";
+  if (!e.hwid) return "inactive"; // No hwid = waiting for registration
+  return e.status === "active" ? "active" : "inactive";
+}
+function timerStateLabel(e) {
+  if (isTimerFrozen(e)) return "⏳ Esperando HWID";
+  if (isTimerPaused(e)) return "⏸ Pausado";
+  return "▶ Corriendo";
+}
+function timerStateClass(e) {
+  if (isTimerFrozen(e)) return "hwid-waiting";
+  if (isTimerPaused(e)) return "hwid-waiting";
+  return "hwid-txt";
+}
+function durLabel(days) {
+  if (!days) return "—";
+  if (days === 1)  return "1 Día";
+  return `${days} Días`;
 }
 
-/* ─── STATE ───────────────────────────────────────── */
-let allKeys    = {};
-let activeDur  = "1d";
-let confirmCb  = null;
-let toastTimer = null;
+/* ─── KEY TYPE SWITCHER ───────────────────────────── */
+function setKeyType(type) {
+  activeKeyType = type;
+  $("tab-free").className = "tab-type" + (type === "free" ? " active-free" : "");
+  $("tab-paid").className = "tab-type" + (type === "paid" ? " active-paid" : "");
+  $("row-qty").style.display       = type === "free" ? "" : "none";
+  $("row-paid-note").style.display = type === "paid" ? "" : "none";
+  $("row-gen-btn").style.display   = type === "paid" ? "none" : "";
+}
 
-/* ─── DOM REFS ────────────────────────────────────── */
-const $ = id => document.getElementById(id);
-const tbody      = $("tbl-body");
-const badge      = $("badge-count");
-const connDot    = $("conn-dot");
-const connLbl    = $("conn-lbl");
-const previewBox = $("preview-box");
-const previewLst = $("preview-list");
-const search     = $("search");
-const fStatus    = $("f-status");
-const fDur       = $("f-dur");
-const fHwid      = $("f-hwid");
-const toast      = $("toast");
-const overlay    = $("overlay");
-const modalMsg   = $("modal-msg");
+/* ─── DURATION SELECTOR ───────────────────────────── */
+$("dur-group").addEventListener("click", e => {
+  const btn = e.target.closest(".btn-dur");
+  if (!btn) return;
+  document.querySelectorAll(".btn-dur").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  activeDays = parseInt(btn.dataset.d, 10);
+  $("custom-days").value = "";
+  updateDurDisplay();
+});
+function applyCustomDur() {
+  const v = parseInt($("custom-days").value, 10);
+  if (!v || v < 1 || v > 3650) { toast_("Ingresa días entre 1 y 3650", "err"); return; }
+  document.querySelectorAll(".btn-dur").forEach(b => b.classList.remove("active"));
+  activeDays = v;
+  updateDurDisplay();
+  toast_(`Duración custom: ${v} días`, "ok");
+}
+function updateDurDisplay() {
+  if (!activeDays) {
+    $("active-dur-display").textContent = "Selecciona una duración ↑";
+  } else {
+    const expDate = new Date(Date.now() + activeDays * 86400000);
+    const expStr  = expDate.toLocaleDateString("es-ES", {day:"2-digit",month:"2-digit",year:"numeric"});
+    $("active-dur-display").textContent = `${durLabel(activeDays)} — expira el ${expStr}`;
+  }
+}
+
+/* ─── GENERATE ────────────────────────────────────── */
+async function handleGenerate() {
+  if (!activeDays) { toast_("Selecciona una duración primero", "err"); return; }
+  let count = 1;
+  if (activeKeyType === "free") {
+    count = Math.min(100, Math.max(1, parseInt($("gen-qty").value) || 1));
+  }
+  const updates = {}, generated = [];
+  for (let i = 0; i < count; i++) {
+    let k;
+    do { k = generateKey(); } while (allKeys[k] || updates[k]);
+    // Key starts with expiresAt = now + days, but timer only runs on HWID detection
+    // We store the full duration as remainingMs so when HWID arrives we set expiresAt = now + remainingMs
+    updates[k] = {
+      key:         k,
+      type:        activeKeyType,
+      status:      "active",
+      days:        activeDays,
+      hwid:        null,
+      createdAt:   Date.now(),
+      expiresAt:   null,          // set when first HWID registered
+      remainingMs: activeDays * 86400000,  // full duration stored
+      timerPaused: false,
+      pausedAt:    null
+    };
+    generated.push(k);
+  }
+  try {
+    await Promise.all(generated.map(k => keysRef.child(k).set(updates[k])));
+    showPreview(generated, updates);
+    toast_(`${count} key${count > 1 ? "s" : ""} creada${count > 1 ? "s" : ""}`, "ok");
+  } catch (err) {
+    toast_(err.message, "err");
+  }
+}
+
+/* ─── PREVIEW ─────────────────────────────────────── */
+function showPreview(keys, data) {
+  $("preview-lbl").textContent = `${keys.length} key(s) generada(s) — ${durLabel(activeDays)} — ${activeKeyType.toUpperCase()}`;
+  previewLst.innerHTML = keys.map(k =>
+    `<div class="preview-item">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="pkey">${k}</span>
+        <span class="pkey-meta">${durLabel(data[k].days)} · ${data[k].type.toUpperCase()}</span>
+      </div>
+      <div class="preview-item-acts">
+        <button class="pcopy"       data-key="${k}">Copiar</button>
+        <button class="pexport-one" data-key="${k}">💾 .txt</button>
+      </div>
+    </div>`
+  ).join("");
+  previewBox.style.display = "";
+}
+previewLst.addEventListener("click", e => {
+  const cpBtn = e.target.closest(".pcopy");
+  if (cpBtn) { copy(cpBtn.dataset.key); cpBtn.textContent = "✓"; setTimeout(() => cpBtn.textContent = "Copiar", 1500); return; }
+  const expOne = e.target.closest(".pexport-one");
+  if (expOne) { downloadTxt([expOne.dataset.key], "key.txt"); toast_("key.txt descargado", "ok"); }
+});
+$("btn-copy-all").addEventListener("click", () => {
+  const keys = [...previewLst.querySelectorAll(".pkey")].map(el => el.textContent);
+  copy(keys.join("\n")); toast_("Todas copiadas", "ok");
+});
+$("btn-export-preview-all").addEventListener("click", () => {
+  const keys = [...previewLst.querySelectorAll(".pkey")].map(el => el.textContent);
+  if (!keys.length) return;
+  downloadTxt(keys, "keys.txt"); toast_(`keys.txt (${keys.length}) descargado`, "ok");
+});
 
 /* ─── CONNECTION STATUS ───────────────────────────── */
 db.ref(".info/connected").on("value", snap => {
@@ -573,181 +1033,400 @@ db.ref(".info/connected").on("value", snap => {
 /* ─── LIVE DATA ───────────────────────────────────── */
 keysRef.on("value", snap => {
   allKeys = snap.val() || {};
+  for (const k of selectedKeys) { if (!allKeys[k]) selectedKeys.delete(k); }
   renderTable();
   renderStats();
+  updateBulkBar();
+  renderSharePanel();
   badge.textContent = Object.keys(allKeys).length + " keys";
 }, err => {
   toast_(err.message, "err");
-  tbody.innerHTML = `<tr class="empty"><td colspan="7">${err.message}</td></tr>`;
+  tbody.innerHTML = `<tr class="empty"><td colspan="10">${err.message}</td></tr>`;
 });
 
 /* ─── STATS ───────────────────────────────────────── */
 function renderStats() {
   const vals = Object.values(allKeys);
-  $("st-total").textContent   = vals.length;
-  $("st-active").textContent  = vals.filter(e => statusOf(e) === "active").length;
-  $("st-inactive").textContent= vals.filter(e => statusOf(e) === "inactive").length;
-  $("st-expired").textContent = vals.filter(e => statusOf(e) === "expired").length;
-  $("st-hwid").textContent    = vals.filter(e => e.hwid && e.hwid !== "null").length;
+  $("st-total").textContent    = vals.length;
+  $("st-active").textContent   = vals.filter(e => statusOf(e) === "active").length;
+  $("st-inactive").textContent = vals.filter(e => statusOf(e) === "inactive").length;
+  $("st-expired").textContent  = vals.filter(e => statusOf(e) === "expired").length;
+  $("st-free").textContent     = vals.filter(e => e.type === "free").length;
+  $("st-paid").textContent     = vals.filter(e => e.type === "paid").length;
 }
 
 /* ─── TABLE RENDER ────────────────────────────────── */
-const STATUS_LABEL = { active:"Activa", inactive:"Inactiva", expired:"Expirada" };
-const STATUS_PILL  = { active:"pill-active", inactive:"pill-inactive", expired:"pill-expired" };
+const STATUS_LABEL = { active:"Activa", inactive:"Inactiva", expired:"Expirada", paused:"Timer pausado" };
+const STATUS_PILL  = { active:"pill-active", inactive:"pill-inactive", expired:"pill-expired", paused:"pill-paused" };
 
-function renderTable() {
+function getFilteredRows() {
   const q   = search.value.toLowerCase().trim();
   const fst = fStatus.value;
-  const fd  = fDur.value;
+  const ft  = fType.value;
   const fh  = fHwid.value;
-
-  const rows = Object.values(allKeys).filter(e => {
+  return Object.values(allKeys).filter(e => {
     const st = statusOf(e);
     if (fst !== "all" && st !== fst) return false;
-    if (fd  !== "all" && e.duration !== fd) return false;
+    if (ft  !== "all" && (e.type || "free") !== ft) return false;
     if (fh === "with"    && !e.hwid) return false;
     if (fh === "without" &&  e.hwid) return false;
-    if (q && !e.key.toLowerCase().includes(q) &&
-        !(e.hwid || "").toLowerCase().includes(q)) return false;
+    if (q && !e.key.toLowerCase().includes(q) && !(e.hwid || "").toLowerCase().includes(q)) return false;
     return true;
   }).sort((a, b) => b.createdAt - a.createdAt);
+}
 
+function renderTable() {
+  const rows = getFilteredRows();
   if (!rows.length) {
-    tbody.innerHTML = '<tr class="empty"><td colspan="7">Sin resultados</td></tr>';
+    tbody.innerHTML = `<tr class="empty"><td colspan="10">Sin resultados</td></tr>`;
+    cbAll.checked = false; cbAll.indeterminate = false;
     return;
   }
 
-  tbody.innerHTML = rows.map(e => {
-    const st  = statusOf(e);
-    const exp = st === "expired";
-    const durLabel = DURATIONS[e.duration]?.label || e.duration;
-    const hwidCell = e.hwid
-      ? `<span class="hwid-txt" title="${e.hwid}">${e.hwid}</span>`
-      : `<span class="hwid-none">Sin dispositivo</span>`;
-    const toggleCls = st === "active" ? "act-toggle-off" : "act-toggle-on";
-    const toggleLbl = st === "active" ? "Desactivar"     : "Activar";
+  // Separate FREE and PAID for visual sections
+  const freeRows = rows.filter(e => (e.type || "free") === "free");
+  const paidRows = rows.filter(e => (e.type || "free") === "paid");
 
-    return `<tr data-key="${e.key}">
-      <td>
-        <div class="key-cell">
-          <span class="key-str">${e.key}</span>
-          <button class="mini-copy" data-copy="${e.key}">cpy</button>
-        </div>
-      </td>
-      <td><span class="pill ${STATUS_PILL[st]}"><span class="pill-dot"></span>${STATUS_LABEL[st]}</span></td>
-      <td><span class="dur-tag">${durLabel}</span></td>
-      <td>${hwidCell}</td>
-      <td><span class="date-txt">${fmt(e.createdAt)}</span></td>
-      <td><span class="date-txt${exp ? " date-exp" : ""}">${fmt(e.expiresAt)}</span></td>
-      <td>
-        <div class="act-group">
-          ${!exp ? `<button class="act ${toggleCls}" data-act="toggle" data-key="${e.key}" data-status="${e.status}">${toggleLbl}</button>` : ""}
-          ${e.hwid ? `<button class="act act-hwid" data-act="reset-hwid" data-key="${e.key}">Reset HWID</button>` : ""}
-          <button class="act act-del" data-act="delete" data-key="${e.key}">Borrar</button>
-        </div>
-      </td>
-    </tr>`;
-  }).join("");
+  let html = "";
+
+  if (freeRows.length && paidRows.length) {
+    // Both present — render with section dividers
+    html += buildDivider("free", freeRows.length);
+    html += freeRows.map(buildRow).join("");
+    html += buildDivider("paid", paidRows.length);
+    html += paidRows.map(buildRow).join("");
+  } else {
+    html = rows.map(buildRow).join("");
+  }
+
+  tbody.innerHTML = html;
+
+  const visibleKeys = rows.map(r => r.key);
+  const selectedVisible = visibleKeys.filter(k => selectedKeys.has(k));
+  cbAll.checked       = selectedVisible.length === visibleKeys.length && visibleKeys.length > 0;
+  cbAll.indeterminate = selectedVisible.length > 0 && selectedVisible.length < visibleKeys.length;
 }
 
-/* ─── TABLE EVENTS ────────────────────────────────── */
+function buildDivider(type, count) {
+  const cls   = type === "free" ? "sdiv-free" : "sdiv-paid";
+  const label = type === "free" ? "🆓 FREE" : "💎 PAID";
+  return `<tr>
+    <td colspan="10" style="padding:0">
+      <div class="section-divider">
+        <span class="${cls}">${label}</span>
+        <span class="sdiv-count">${count} key${count > 1 ? "s" : ""}</span>
+      </div>
+    </td>
+  </tr>`;
+}
+
+function buildRow(e) {
+  const st       = statusOf(e);
+  const exp      = st === "expired";
+  const ktype    = e.type || "free";
+  const dLabel   = durLabel(e.days || 0);
+  const checked  = selectedKeys.has(e.key) ? "checked" : "";
+  const frozen   = isTimerFrozen(e);
+  const paused   = isTimerPaused(e);
+
+  const hwidCell = e.hwid
+    ? `<span class="hwid-txt" title="${e.hwid}">${e.hwid}</span>`
+    : `<span class="hwid-none">Sin dispositivo</span>`;
+
+  const expiryDisplay = frozen
+    ? `<span class="hwid-waiting">⏳ Esperando HWID</span>`
+    : paused
+      ? `<span class="hwid-waiting">⏸ ${fmt(e.expiresAt)}</span>`
+      : `<span class="date-txt${exp ? " date-exp" : ""}">${fmt(e.expiresAt)}</span>`;
+
+  const timerCell = `<span class="${timerStateClass(e)}" style="font-size:10px">${timerStateLabel(e)}</span>`;
+
+  const toggleCls = st === "active" ? "act-toggle-off" : "act-toggle-on";
+  const toggleLbl = st === "active" ? "Desactivar" : "Activar";
+
+  return `<tr data-key="${e.key}" class="${selectedKeys.has(e.key) ? "selected" : ""}">
+    <td class="td-check">
+      <input type="checkbox" class="cb row-cb" data-key="${e.key}" ${checked}/>
+    </td>
+    <td>
+      <div class="key-cell">
+        <span class="key-str">${e.key}</span>
+        <button class="mini-copy" data-copy="${e.key}">cpy</button>
+      </div>
+    </td>
+    <td><span class="ktype ktype-${ktype}">${ktype.toUpperCase()}</span></td>
+    <td><span class="pill ${STATUS_PILL[st]}"><span class="pill-dot"></span>${STATUS_LABEL[st]}</span></td>
+    <td>${timerCell}</td>
+    <td><span class="dur-tag">${dLabel}</span></td>
+    <td>${hwidCell}</td>
+    <td><span class="date-txt">${fmt(e.createdAt)}</span></td>
+    <td>${expiryDisplay}</td>
+    <td>
+      <div class="act-group">
+        ${!exp ? `<button class="act ${toggleCls}" data-act="toggle" data-key="${e.key}" data-status="${e.status}">${toggleLbl}</button>` : ""}
+        ${!frozen && !paused && !exp ? `<button class="act act-pause"  data-act="pause"   data-key="${e.key}">⏸ Pausar</button>` : ""}
+        ${paused ? `<button class="act act-resume" data-act="resume"  data-key="${e.key}">▶ Reanudar</button>` : ""}
+        ${!frozen ? `<button class="act act-addtime" data-act="addtime" data-key="${e.key}">⏱ +Tiempo</button>` : ""}
+        ${e.hwid ? `<button class="act act-hwid" data-act="reset-hwid" data-key="${e.key}">Reset HWID</button>` : ""}
+        <button class="act act-export" data-act="export-one" data-key="${e.key}">💾 .txt</button>
+        <button class="act act-del"    data-act="delete"     data-key="${e.key}">Borrar</button>
+      </div>
+    </td>
+  </tr>`;
+}
+
+/* ─── CHECKBOX — SELECT ALL ───────────────────────── */
+cbAll.addEventListener("change", () => {
+  const rows = getFilteredRows();
+  rows.forEach(e => {
+    if (cbAll.checked) selectedKeys.add(e.key);
+    else selectedKeys.delete(e.key);
+  });
+  renderTable(); updateBulkBar();
+});
+tbody.addEventListener("change", e => {
+  const cb = e.target.closest(".row-cb");
+  if (!cb) return;
+  const key = cb.dataset.key;
+  if (cb.checked) selectedKeys.add(key);
+  else selectedKeys.delete(key);
+  const tr = tbody.querySelector(`tr[data-key="${key}"]`);
+  if (tr) tr.classList.toggle("selected", cb.checked);
+  updateBulkBar();
+  const rows = getFilteredRows();
+  const vis  = rows.map(r => r.key);
+  const sel  = vis.filter(k => selectedKeys.has(k));
+  cbAll.checked       = sel.length === vis.length && vis.length > 0;
+  cbAll.indeterminate = sel.length > 0 && sel.length < vis.length;
+});
+
+/* ─── BULK BAR ────────────────────────────────────── */
+function updateBulkBar() {
+  if (selectedKeys.size > 0) {
+    bulkBar.classList.add("visible");
+    bulkCount.textContent = `${selectedKeys.size} seleccionada${selectedKeys.size > 1 ? "s" : ""}`;
+  } else {
+    bulkBar.classList.remove("visible");
+  }
+}
+
+$("bulk-activate").addEventListener("click", () => {
+  if (!selectedKeys.size) return;
+  const upd = {};
+  for (const k of selectedKeys) upd[`${k}/status`] = "active";
+  confirm_(`¿Activar ${selectedKeys.size} key(s)?`, () =>
+    keysRef.update(upd).then(() => { toast_(`${selectedKeys.size} activadas`, "ok"); selectedKeys.clear(); updateBulkBar(); }).catch(err => toast_(err.message, "err"))
+  );
+});
+$("bulk-deactivate").addEventListener("click", () => {
+  if (!selectedKeys.size) return;
+  const upd = {};
+  for (const k of selectedKeys) upd[`${k}/status`] = "inactive";
+  confirm_(`¿Desactivar ${selectedKeys.size} key(s)?`, () =>
+    keysRef.update(upd).then(() => { toast_(`${selectedKeys.size} desactivadas`, "ok"); selectedKeys.clear(); updateBulkBar(); }).catch(err => toast_(err.message, "err"))
+  );
+});
+$("bulk-export-txt").addEventListener("click", () => {
+  if (!selectedKeys.size) return;
+  downloadTxt([...selectedKeys], "keys.txt");
+  toast_(`keys.txt (${selectedKeys.size}) descargado`, "ok");
+});
+$("bulk-delete").addEventListener("click", () => {
+  if (!selectedKeys.size) return;
+  confirm_(`¿Borrar permanentemente ${selectedKeys.size} key(s)?`, () => {
+    const upd = {};
+    selectedKeys.forEach(k => upd[k] = null);
+    keysRef.update(upd).then(() => { toast_(`${selectedKeys.size} eliminadas`, "ok"); selectedKeys.clear(); updateBulkBar(); }).catch(err => toast_(err.message, "err"));
+  });
+});
+$("bulk-pause").addEventListener("click", () => {
+  if (!selectedKeys.size) return;
+  confirm_(`¿Pausar timer de ${selectedKeys.size} key(s)?`, () => {
+    const batch = {};
+    for (const k of selectedKeys) {
+      const e = allKeys[k];
+      if (!e || isTimerFrozen(e)) continue;
+      const rem = Math.max(0, (e.expiresAt || 0) - Date.now());
+      batch[`${k}/timerPaused`]  = true;
+      batch[`${k}/pausedAt`]     = Date.now();
+      batch[`${k}/remainingMs`]  = rem;
+    }
+    keysRef.update(batch).then(() => { toast_(`Timers pausados`, "ok"); selectedKeys.clear(); updateBulkBar(); }).catch(err => toast_(err.message, "err"));
+  });
+});
+$("bulk-resume").addEventListener("click", () => {
+  if (!selectedKeys.size) return;
+  confirm_(`¿Reanudar timer de ${selectedKeys.size} key(s)?`, () => {
+    const batch = {};
+    for (const k of selectedKeys) {
+      const e = allKeys[k];
+      if (!e || !isTimerPaused(e)) continue;
+      const rem = e.remainingMs || 0;
+      batch[`${k}/timerPaused`] = false;
+      batch[`${k}/expiresAt`]   = Date.now() + rem;
+      batch[`${k}/remainingMs`] = null;
+      batch[`${k}/pausedAt`]    = null;
+    }
+    keysRef.update(batch).then(() => { toast_(`Timers reanudados`, "ok"); selectedKeys.clear(); updateBulkBar(); }).catch(err => toast_(err.message, "err"));
+  });
+});
+$("bulk-addtime").addEventListener("click", () => {
+  if (!selectedKeys.size) return;
+  openAddTimeModal(`Agregar tiempo a ${selectedKeys.size} key(s)`, `Días que se sumarán a cada key seleccionada:`, days => {
+    const batch = {};
+    const ms = days * 86400000;
+    for (const k of selectedKeys) {
+      const e = allKeys[k];
+      if (!e) continue;
+      if (isTimerPaused(e)) {
+        batch[`${k}/remainingMs`] = (e.remainingMs || 0) + ms;
+      } else if (!isTimerFrozen(e)) {
+        batch[`${k}/expiresAt`] = (e.expiresAt || Date.now()) + ms;
+      } else {
+        // No HWID → add to remaining
+        batch[`${k}/remainingMs`] = (e.remainingMs || e.days * 86400000) + ms;
+      }
+      batch[`${k}/days`] = (e.days || 0) + days;
+    }
+    keysRef.update(batch).then(() => { toast_(`+${days} día(s) a ${selectedKeys.size} keys`, "ok"); selectedKeys.clear(); updateBulkBar(); }).catch(err => toast_(err.message, "err"));
+  });
+});
+$("bulk-clear").addEventListener("click", () => { selectedKeys.clear(); updateBulkBar(); renderTable(); });
+
+/* ─── ROW ACTIONS ─────────────────────────────────── */
 tbody.addEventListener("click", e => {
-  // mini copy
   const cpBtn = e.target.closest(".mini-copy");
   if (cpBtn) { copy(cpBtn.dataset.copy); toast_("Copiada", "ok"); return; }
 
-  // action buttons
   const actBtn = e.target.closest(".act");
   if (!actBtn) return;
-  const { act, key, status } = actBtn.dataset;
+  const { act, key } = actBtn.dataset;
+  const entry = allKeys[key];
+  if (!entry) return;
 
   if (act === "toggle") {
-    const next = status === "active" ? "inactive" : "active";
+    const next = (entry.status === "active") ? "inactive" : "active";
     keysRef.child(key).update({ status: next })
       .then(() => toast_(`Key ${next === "active" ? "activada" : "desactivada"}`, "ok"))
       .catch(err => toast_(err.message, "err"));
     return;
   }
-  if (act === "reset-hwid") {
-    confirm_(`¿Resetear HWID de ${key}?`, () =>
-      keysRef.child(key).update({ hwid: null })
-        .then(() => toast_("HWID reseteado", "ok"))
+  if (act === "pause") {
+    const rem = Math.max(0, (entry.expiresAt || 0) - Date.now());
+    confirm_(`¿Pausar timer de ${key}?`, () =>
+      keysRef.child(key).update({ timerPaused: true, pausedAt: Date.now(), remainingMs: rem })
+        .then(() => toast_("Timer pausado", "ok"))
         .catch(err => toast_(err.message, "err"))
     );
+    return;
+  }
+  if (act === "resume") {
+    const rem = entry.remainingMs || 0;
+    confirm_(`¿Reanudar timer de ${key}?`, () =>
+      keysRef.child(key).update({ timerPaused: false, expiresAt: Date.now() + rem, remainingMs: null, pausedAt: null })
+        .then(() => toast_("Timer reanudado", "ok"))
+        .catch(err => toast_(err.message, "err"))
+    );
+    return;
+  }
+  if (act === "addtime") {
+    openAddTimeModal(`Agregar tiempo — ${key}`, `Días que se sumarán al timer de esta key:`, days => {
+      const ms  = days * 86400000;
+      const upd = { days: (entry.days || 0) + days };
+      if (isTimerPaused(entry)) {
+        upd.remainingMs = (entry.remainingMs || 0) + ms;
+      } else if (!isTimerFrozen(entry)) {
+        upd.expiresAt = (entry.expiresAt || Date.now()) + ms;
+      } else {
+        upd.remainingMs = (entry.remainingMs || entry.days * 86400000) + ms;
+      }
+      keysRef.child(key).update(upd)
+        .then(() => toast_(`+${days} día(s) agregados`, "ok"))
+        .catch(err => toast_(err.message, "err"));
+    });
+    return;
+  }
+  if (act === "reset-hwid") {
+    confirm_(`¿Resetear HWID de ${key}?\nEl timer se congelará hasta que el dispositivo se reconecte.`, () =>
+      keysRef.child(key).update({ hwid: null, expiresAt: null, remainingMs: entry.remainingMs || Math.max(0, (entry.expiresAt || 0) - Date.now()), timerPaused: false })
+        .then(() => toast_("HWID reseteado — timer congelado", "ok"))
+        .catch(err => toast_(err.message, "err"))
+    );
+    return;
+  }
+  if (act === "export-one") {
+    downloadTxt([key], "key.txt"); toast_("key.txt descargado", "ok");
     return;
   }
   if (act === "delete") {
     confirm_(`¿Eliminar permanentemente "${key}"?`, () =>
       keysRef.child(key).remove()
-        .then(() => toast_("Key eliminada", "ok"))
+        .then(() => { toast_("Key eliminada", "ok"); selectedKeys.delete(key); updateBulkBar(); })
         .catch(err => toast_(err.message, "err"))
     );
     return;
   }
 });
 
-/* ─── DURATION SELECTOR ───────────────────────────── */
-$("dur-group").addEventListener("click", e => {
-  const btn = e.target.closest(".btn-dur");
-  if (!btn) return;
-  document.querySelectorAll(".btn-dur").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  activeDur = btn.dataset.d;
-});
-
-/* ─── GENERATE ────────────────────────────────────── */
-$("btn-gen").addEventListener("click", async () => {
-  const count = Math.min(50, Math.max(1, parseInt($("gen-qty").value) || 1));
-  const updates = {}, generated = [];
-
-  for (let i = 0; i < count; i++) {
-    let k;
-    // evitar colisiones con keys existentes o dentro del batch
-    do { k = generateKey(); } while (allKeys[k] || updates[k]);
-    updates[k] = {
-      key:       k,
-      status:    "active",
-      duration:  activeDur,
-      hwid:      null,
-      createdAt: Date.now(),
-      expiresAt: expiryFor(activeDur)
-    };
-    generated.push(k);
-  }
-
-  try {
-    await Promise.all(generated.map(k => keysRef.child(k).set(updates[k])));
-    showPreview(generated);
-    toast_(`${count} key(s) creada(s)`, "ok");
-  } catch (err) {
-    toast_(err.message, "err");
-  }
-});
-
-function showPreview(keys) {
-  $("preview-lbl").textContent = `${keys.length} key(s) generada(s)`;
-  previewLst.innerHTML = keys.map(k =>
-    `<div class="preview-item">
-      <span class="pkey">${k}</span>
-      <button class="pcopy" data-key="${k}">Copiar</button>
-    </div>`
-  ).join("");
-  previewBox.style.display = "";
+/* ─── GLOBAL ACTIONS ──────────────────────────────── */
+function pauseAllKeys() {
+  const keys = Object.values(allKeys).filter(e => !isTimerFrozen(e) && !isTimerPaused(e) && !isExpired(e));
+  if (!keys.length) { toast_("No hay keys con timer activo", "ok"); return; }
+  confirm_(`¿Pausar timer de TODAS las keys activas? (${keys.length})`, () => {
+    const batch = {};
+    for (const e of keys) {
+      const rem = Math.max(0, (e.expiresAt || 0) - Date.now());
+      batch[`${e.key}/timerPaused`]  = true;
+      batch[`${e.key}/pausedAt`]     = Date.now();
+      batch[`${e.key}/remainingMs`]  = rem;
+    }
+    keysRef.update(batch).then(() => toast_(`${keys.length} timers pausados`, "ok")).catch(err => toast_(err.message, "err"));
+  });
 }
-
-previewLst.addEventListener("click", e => {
-  const btn = e.target.closest(".pcopy");
-  if (!btn) return;
-  copy(btn.dataset.key);
-  btn.textContent = "✓";
-  setTimeout(() => btn.textContent = "Copiar", 1500);
-});
-
-$("btn-copy-all").addEventListener("click", () => {
-  const keys = [...previewLst.querySelectorAll(".pkey")].map(el => el.textContent);
-  copy(keys.join("\n"));
-  toast_("Todas copiadas", "ok");
-});
+function resumeAllKeys() {
+  const keys = Object.values(allKeys).filter(e => isTimerPaused(e));
+  if (!keys.length) { toast_("No hay timers pausados", "ok"); return; }
+  confirm_(`¿Reanudar timer de TODAS las keys pausadas? (${keys.length})`, () => {
+    const batch = {};
+    for (const e of keys) {
+      const rem = e.remainingMs || 0;
+      batch[`${e.key}/timerPaused`] = false;
+      batch[`${e.key}/expiresAt`]   = Date.now() + rem;
+      batch[`${e.key}/remainingMs`] = null;
+      batch[`${e.key}/pausedAt`]    = null;
+    }
+    keysRef.update(batch).then(() => toast_(`${keys.length} timers reanudados`, "ok")).catch(err => toast_(err.message, "err"));
+  });
+}
+function addTimeToAll() {
+  const sel = $("global-add-days").value;
+  if (!sel) { toast_("Selecciona cuántos días", "err"); return; }
+  if (sel === "custom") {
+    openAddTimeModal("Agregar tiempo a TODAS las keys", "Días que se sumarán a cada key:", days => applyTimeToAll(days));
+    return;
+  }
+  const days = parseInt(sel, 10);
+  confirm_(`¿Agregar +${days} día(s) a TODAS las keys?`, () => applyTimeToAll(days));
+}
+function applyTimeToAll(days) {
+  const ms    = days * 86400000;
+  const keys  = Object.values(allKeys);
+  if (!keys.length) { toast_("No hay keys", "err"); return; }
+  const batch = {};
+  for (const e of keys) {
+    batch[`${e.key}/days`] = (e.days || 0) + days;
+    if (isTimerPaused(e)) {
+      batch[`${e.key}/remainingMs`] = (e.remainingMs || 0) + ms;
+    } else if (!isTimerFrozen(e)) {
+      batch[`${e.key}/expiresAt`] = (e.expiresAt || Date.now()) + ms;
+    } else {
+      batch[`${e.key}/remainingMs`] = (e.remainingMs || (e.days || 0) * 86400000) + ms;
+    }
+  }
+  keysRef.update(batch)
+    .then(() => { toast_(`+${days} día(s) a ${keys.length} keys`, "ok"); $("global-add-days").value = ""; })
+    .catch(err => toast_(err.message, "err"));
+}
 
 /* ─── DELETE EXPIRED ──────────────────────────────── */
 $("btn-del-exp").addEventListener("click", () => {
@@ -756,39 +1435,174 @@ $("btn-del-exp").addEventListener("click", () => {
   confirm_(`¿Borrar ${expKeys.length} key(s) expirada(s)?`, () => {
     const upd = {};
     expKeys.forEach(k => upd[k] = null);
-    keysRef.update(upd)
-      .then(() => toast_(`${expKeys.length} eliminadas`, "ok"))
-      .catch(err => toast_(err.message, "err"));
+    keysRef.update(upd).then(() => { expKeys.forEach(k => selectedKeys.delete(k)); updateBulkBar(); toast_(`${expKeys.length} eliminadas`, "ok"); }).catch(err => toast_(err.message, "err"));
   });
 });
 
 /* ─── EXPORT CSV ──────────────────────────────────── */
-$("btn-export").addEventListener("click", () => {
-  const header = ["Key","Estado","Duración","HWID","Creada","Expira"];
-  const rows   = Object.values(allKeys)
-    .sort((a,b) => b.createdAt - a.createdAt)
-    .map(e => [
-      e.key,
-      statusOf(e),
-      DURATIONS[e.duration]?.label || e.duration,
-      e.hwid || "",
-      fmt(e.createdAt),
-      fmt(e.expiresAt)
-    ]);
+$("btn-export-csv").addEventListener("click", () => {
+  const header = ["Key","Tipo","Estado","Timer","Duración","HWID","Creada","Expira","Ms Restantes"];
+  const rows   = Object.values(allKeys).sort((a,b) => b.createdAt - a.createdAt).map(e => [
+    e.key,
+    (e.type || "free").toUpperCase(),
+    statusOf(e),
+    timerStateLabel(e),
+    durLabel(e.days || 0),
+    e.hwid || "",
+    fmt(e.createdAt),
+    isTimerFrozen(e) ? "Esperando HWID" : fmt(e.expiresAt),
+    isTimerPaused(e) ? (e.remainingMs || 0) : isTimerFrozen(e) ? (e.remainingMs || 0) : Math.max(0, (e.expiresAt || 0) - Date.now())
+  ]);
   const csv = [header, ...rows].map(r => r.map(c => `"${c}"`).join(",")).join("\n");
-  const a = Object.assign(document.createElement("a"), {
-    href: URL.createObjectURL(new Blob([csv], { type:"text/csv;charset=utf-8;" })),
-    download: "shadowstore-keys.csv"
-  });
-  a.click();
-  URL.revokeObjectURL(a.href);
+  triggerDownload(new Blob([csv], { type:"text/csv;charset=utf-8;" }), "shadowstore-keys.csv");
   toast_("CSV exportado", "ok");
 });
 
+/* ─── EXPORT TXT ──────────────────────────────────── */
+$("btn-export-all-txt").addEventListener("click", () => {
+  const rows = getFilteredRows();
+  if (!rows.length) { toast_("Sin keys visibles", "err"); return; }
+  downloadTxt(rows.map(r => r.key), "keys.txt");
+  toast_(`keys.txt (${rows.length}) descargado`, "ok");
+});
+
+/* ─── SHARE PANEL ──────────────────────────────────── */
+function renderSharePanel() {
+  const typeFilter   = $("share-filter-type").value;
+  const statusFilter = $("share-filter-status").value;
+
+  const freeKeys = Object.values(allKeys)
+    .filter(e => (e.type || "free") === "free")
+    .filter(e => statusFilter === "all" || statusOf(e) === statusFilter)
+    .sort((a,b) => b.createdAt - a.createdAt);
+
+  const paidKeys = Object.values(allKeys)
+    .filter(e => (e.type || "free") === "paid")
+    .filter(e => statusFilter === "all" || statusOf(e) === statusFilter)
+    .sort((a,b) => b.createdAt - a.createdAt);
+
+  const showFree = typeFilter !== "paid";
+  const showPaid = typeFilter !== "free";
+
+  let html = "";
+
+  if (showFree && freeKeys.length) {
+    html += `<div class="section-divider sdiv-free" style="grid-column:1/-1;border-radius:6px;margin-bottom:4px;border-top:none">🆓 FREE — ${freeKeys.length} keys</div>`;
+    html += freeKeys.map(e => buildShareItem(e)).join("");
+  }
+  if (showPaid && paidKeys.length) {
+    html += `<div class="section-divider sdiv-paid" style="grid-column:1/-1;border-radius:6px;margin-bottom:4px;border-top:${showFree && freeKeys.length ? "1px solid var(--border)" : "none"}">💎 PAID — ${paidKeys.length} keys</div>`;
+    html += paidKeys.map(e => buildShareItem(e)).join("");
+  }
+  if (!html) html = `<span style="color:var(--text-3);font-size:12px">Sin keys para mostrar</span>`;
+
+  $("share-grid").innerHTML = html;
+  $("share-grid").querySelectorAll(".share-item").forEach(el => {
+    el.addEventListener("click", () => {
+      const k = el.dataset.key;
+      if (shareSelected.has(k)) { shareSelected.delete(k); el.classList.remove("selected"); el.querySelector(".share-item-cb").checked = false; }
+      else { shareSelected.add(k); el.classList.add("selected"); el.querySelector(".share-item-cb").checked = true; }
+      genShareOutput();
+    });
+  });
+}
+
+function buildShareItem(e) {
+  const sel = shareSelected.has(e.key) ? "selected" : "";
+  return `<div class="share-item ${sel}" data-key="${e.key}">
+    <input type="checkbox" class="share-item-cb" ${sel ? "checked" : ""} onclick="event.stopPropagation()"/>
+    <span class="share-item-key">${e.key}</span>
+    <span class="share-item-meta">${durLabel(e.days)}</span>
+  </div>`;
+}
+
+function selectAllShare() {
+  const items = $("share-grid").querySelectorAll(".share-item");
+  items.forEach(el => { shareSelected.add(el.dataset.key); el.classList.add("selected"); el.querySelector(".share-item-cb").checked = true; });
+  genShareOutput();
+}
+function clearShareSel() {
+  shareSelected.clear();
+  $("share-grid").querySelectorAll(".share-item").forEach(el => { el.classList.remove("selected"); el.querySelector(".share-item-cb").checked = false; });
+  $("share-output").classList.remove("visible");
+  $("share-output").textContent = "";
+}
+function genShareOutput() {
+  const keys = [...shareSelected];
+  const out  = $("share-output");
+  if (!keys.length) { out.classList.remove("visible"); out.textContent = ""; return; }
+  // Separate free and paid in output
+  const freeK = keys.filter(k => allKeys[k] && (allKeys[k].type || "free") === "free");
+  const paidK = keys.filter(k => allKeys[k] && (allKeys[k].type || "free") === "paid");
+  let txt = "";
+  if (freeK.length) { txt += `# FREE KEYS (${freeK.length})\n` + freeK.join("\n"); }
+  if (paidK.length) { if (txt) txt += "\n\n"; txt += `# PAID KEYS (${paidK.length})\n` + paidK.join("\n"); }
+  out.textContent = txt;
+  out.classList.add("visible");
+}
+function copyShareOutput() {
+  const txt = $("share-output").textContent;
+  if (!txt) { toast_("Nada seleccionado", "err"); return; }
+  copy(txt); toast_(`${shareSelected.size} key(s) copiadas`, "ok");
+}
+function downloadShareTxt() {
+  if (!shareSelected.size) { toast_("Nada seleccionado", "err"); return; }
+  const freeK = [...shareSelected].filter(k => allKeys[k] && (allKeys[k].type || "free") === "free");
+  const paidK = [...shareSelected].filter(k => allKeys[k] && (allKeys[k].type || "free") === "paid");
+  const lines = [];
+  const now   = new Date().toLocaleString("es-ES");
+  lines.push(`# ShadowStore Keys — ${now}`);
+  if (freeK.length) { lines.push("", `# FREE (${freeK.length})`, ...freeK); }
+  if (paidK.length) { lines.push("", `# PAID (${paidK.length})`, ...paidK); }
+  triggerDownload(new Blob([lines.join("\n")], { type:"text/plain;charset=utf-8;" }), "share-keys.txt");
+  toast_(`share-keys.txt (${shareSelected.size}) descargado`, "ok");
+}
+
+// Re-render share panel on filter change
+$("share-filter-type").addEventListener("change", renderSharePanel);
+$("share-filter-status").addEventListener("change", renderSharePanel);
+
 /* ─── FILTERS ─────────────────────────────────────── */
-[search, fStatus, fDur, fHwid].forEach(el => {
+[search, fStatus, fType, fHwid].forEach(el => {
   el.addEventListener("input",  renderTable);
   el.addEventListener("change", renderTable);
+});
+
+/* ─── ADD TIME MODAL ─────────────────────────────── */
+function openAddTimeModal(title, sub, cb) {
+  addTimeCb   = cb;
+  addTimeDays = null;
+  $("addtime-title").textContent = title;
+  $("addtime-sub").textContent   = sub;
+  $("addtime-ok").disabled = true;
+  document.querySelectorAll(".addtime-opt").forEach(b => b.classList.remove("sel"));
+  $("addtime-custom-days").value = "";
+  $("overlay-addtime").classList.remove("off");
+}
+function selectAddTimeDays(d) {
+  if (!d || d < 1) { toast_("Días inválidos", "err"); return; }
+  addTimeDays = d;
+  $("addtime-ok").disabled = false;
+  document.querySelectorAll(".addtime-opt").forEach(b => b.classList.remove("sel"));
+}
+function closeAddTimeModal() {
+  $("overlay-addtime").classList.add("off");
+  addTimeCb = null; addTimeDays = null;
+}
+function confirmAddTime() {
+  if (!addTimeDays || !addTimeCb) return;
+  const cb = addTimeCb;
+  const d  = addTimeDays;
+  closeAddTimeModal();
+  cb(d);
+}
+$("addtime-grid").addEventListener("click", e => {
+  const btn = e.target.closest(".addtime-opt");
+  if (!btn) return;
+  document.querySelectorAll(".addtime-opt").forEach(b => b.classList.remove("sel"));
+  btn.classList.add("sel");
+  addTimeDays = parseInt(btn.dataset.d, 10);
+  $("addtime-ok").disabled = false;
 });
 
 /* ─── TOAST ───────────────────────────────────────── */
@@ -796,43 +1610,40 @@ function toast_(msg, type="info") {
   clearTimeout(toastTimer);
   toast.textContent = msg;
   toast.className = type === "ok" ? "t-ok" : type === "err" ? "t-err" : "";
-  toastTimer = setTimeout(() => toast.classList.add("hide"), 3000);
+  toastTimer = setTimeout(() => toast.classList.add("hide"), 3200);
 }
 
-/* ─── MODAL ───────────────────────────────────────── */
-function confirm_(msg, cb) {
-  modalMsg.textContent = msg;
-  confirmCb = cb;
-  overlay.classList.remove("off");
-}
-function closeModal() {
-  overlay.classList.add("off");
-  confirmCb = null;
-}
-$("modal-ok").addEventListener("click", () => {
-  if (typeof confirmCb === "function") confirmCb();
-  closeModal();
-});
+/* ─── CONFIRM MODAL ───────────────────────────────── */
+function confirm_(msg, cb) { modalMsg.textContent = msg; confirmCb = cb; overlay.classList.remove("off"); }
+function closeModal()      { overlay.classList.add("off"); confirmCb = null; }
+$("modal-ok").addEventListener("click", () => { if (typeof confirmCb === "function") confirmCb(); closeModal(); });
 $("modal-cancel").addEventListener("click", closeModal);
 overlay.addEventListener("click", e => { if (e.target === overlay) closeModal(); });
 
 /* ─── CLIPBOARD ───────────────────────────────────── */
 function copy(text) {
-  if (navigator.clipboard?.writeText) {
-    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
-  } else {
-    fallbackCopy(text);
-  }
+  if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+  else fallbackCopy(text);
 }
 function fallbackCopy(text) {
-  const ta = Object.assign(document.createElement("textarea"), {
-    value: text, style: "position:fixed;opacity:0"
-  });
-  document.body.appendChild(ta);
-  ta.select();
-  document.execCommand("copy");
-  document.body.removeChild(ta);
+  const ta = Object.assign(document.createElement("textarea"), { value: text, style:"position:fixed;opacity:0" });
+  document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
 }
+
+/* ─── DOWNLOAD HELPERS ────────────────────────────── */
+function downloadTxt(keys, filename) {
+  const now   = new Date().toLocaleString("es-ES");
+  const lines = [`# ShadowStore Keys — ${now}`, `# Total: ${keys.length}`, "", ...keys];
+  triggerDownload(new Blob([lines.join("\n")], { type:"text/plain;charset=utf-8;" }), filename);
+}
+function triggerDownload(blob, filename) {
+  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: filename });
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ─── INIT ────────────────────────────────────────── */
+setKeyType("free");
+updateDurDisplay();
 </script>
 </body>
 </html>
