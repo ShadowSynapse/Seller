@@ -1,16 +1,21 @@
 {
   "rules": {
     "keys": {
-      ".read":  true,
+      ".read": true,
       ".write": "auth != null",
       "$keyId": {
-        ".validate": "newData.hasChildren(['key','status','duration','createdAt','expiresAt'])",
-        "key":       { ".validate": "newData.isString() && newData.val().matches(/^SHADOW-[A-Z0-9]{6}$/)" },
-        "status":    { ".validate": "newData.isString() && (newData.val() === 'active' || newData.val() === 'inactive')" },
-        "duration":  { ".validate": "newData.isString() && (newData.val() === '1d' || newData.val() === '7d' || newData.val() === '15d' || newData.val() === '30d')" },
-        "hwid":      { ".validate": "newData.isString() || newData.val() === null" },
-        "createdAt": { ".validate": "newData.isNumber()" },
-        "expiresAt": { ".validate": "newData.isNumber()" }
+        ".validate": "newData.hasChildren(['key','type','status','days','createdAt'])",
+        "key":         { ".validate": "newData.isString() && newData.val().matches(/^SHADOW-[A-Z0-9]{6}$/)" },
+        "type":        { ".validate": "newData.isString() && (newData.val() === 'free' || newData.val() === 'paid')" },
+        "status":      { ".validate": "newData.isString() && (newData.val() === 'active' || newData.val() === 'inactive')" },
+        "days":        { ".validate": "newData.isNumber() && newData.val() >= 1" },
+        "hwid":        { ".validate": "newData.isString() || newData.val() === null" },
+        "createdAt":   { ".validate": "newData.isNumber()" },
+        "expiresAt":   { ".validate": "newData.isNumber() || newData.val() === null" },
+        "remainingMs": { ".validate": "newData.isNumber() || newData.val() === null" },
+        "timerPaused": { ".validate": "newData.isBoolean() || newData.val() === null" },
+        "pausedAt":    { ".validate": "newData.isNumber() || newData.val() === null" },
+        "$other":      { ".validate": false }
       }
     }
   }
