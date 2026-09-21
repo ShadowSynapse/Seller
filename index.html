@@ -6,6 +6,7 @@
 <title>ShadowStore — Key Panel v5</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <style>
 /* ─── RESET & TOKENS ──────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -790,7 +791,18 @@ const FIREBASE_CFG = {
 
 firebase.initializeApp(FIREBASE_CFG);
 const db      = firebase.app().database(FIREBASE_CFG.databaseURL);
+const auth    = firebase.auth();
 const keysRef = db.ref("keys");
+
+/* ─── AUTH ANON — requerido para writes en reglas Firebase ─── */
+let _authReady = false;
+auth.onAuthStateChanged(user => {
+  if (user) { _authReady = true; }
+});
+auth.signInAnonymously().catch(err => {
+  console.warn("signInAnonymously failed (rules can still allow open writes):", err.code);
+  _authReady = true; // si falla, dejamos pasar de todos modos
+});
 
 /* ─── KEYGEN ──────────────────────────────────────── */
 const ALPHA   = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
